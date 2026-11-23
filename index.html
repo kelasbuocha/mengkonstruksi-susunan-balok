@@ -1,0 +1,2693 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Merekonstruksi Susunan Kubus - Matematika Kelas VI SD (Mode PID)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Three.js r128 untuk visualisasi & interaksi kubus 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        html, body {
+            font-family: 'Nunito', sans-serif;
+            background: #0F172A;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            color: #1E293B;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        /* Kontainer Utama Rasio Presisi 16:9 untuk PID / IFP */
+        .app-stage-16-9 {
+            width: 100%;
+            max-width: min(100vw, calc(100vh * 16 / 9));
+            min-height: 100vh;
+            background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 50%, #F0FDF4 100%);
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.55);
+        }
+        @media (min-width: 1024px) and (min-aspect-ratio: 16/9) {
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+            .app-stage-16-9 {
+                aspect-ratio: 16 / 9;
+                height: 100vh;
+                max-height: 100vh;
+                min-height: 0;
+                overflow: hidden;
+            }
+            .app-stage-16-9 main {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-y: auto;
+                scrollbar-width: thin;
+            }
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Fredoka', sans-serif;
+        }
+        /* Tombol besar responsif untuk Papan Interaktif Digital (PID) */
+        .btn-3d {
+            transition: all 0.12s ease;
+            box-shadow: 0 4px 0 rgba(15, 23, 42, 0.22);
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 rgba(15, 23, 42, 0.22);
+        }
+        /* Area Canvas 3D khusus layar sentuh PID */
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 260px;
+            touch-action: none;
+            user-select: none;
+            overflow: hidden;
+        }
+        .canvas-wrapper canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="selection:bg-indigo-200">
+    <div id="app-stage" class="app-stage-16-9">
+
+    <!-- ===================================================================== -->
+    <!-- HALAMAN BERANDA UTAMA (SESUAI TAMPILAN PEMBUKA PID / IFP)             -->
+    <!-- ===================================================================== -->
+    <section id="section-beranda" class="relative w-full h-full flex-1 flex flex-col items-center justify-center p-6 sm:p-10 text-center bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white fade-in">
+        <!-- Tombol Layar Penuh Pojok Kanan Atas -->
+        <button onclick="toggleFullscreen()" title="Layar Penuh PID" class="absolute top-4 right-4 sm:top-6 sm:right-6 px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/30 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 transition shadow-md">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+            </svg>
+            <span>LAYAR PENUH</span>
+        </button>
+
+        <!-- Konten Tengah Beranda -->
+        <div class="max-w-4xl mx-auto flex flex-col items-center space-y-5 sm:space-y-6">
+            <!-- Lencana Kurikulum Kuning -->
+            <div class="px-5 py-2 rounded-full bg-amber-400 text-slate-900 font-extrabold text-xs sm:text-sm tracking-wide shadow-md uppercase">
+                MATEMATIKA KELAS VI SD/MI • BAB 3: KUBUS DAN BALOK (EKSPLORASI 3.2)
+            </div>
+
+            <!-- Ilustrasi Ikon 3 Kubus Isometrik -->
+            <div class="drop-shadow-xl my-1">
+                <svg width="116" height="116" viewBox="0 0 120 120">
+                    <!-- Kubus Kiri Bawah (Kuning) -->
+                    <polygon points="36,56 58,44 58,68 36,80" fill="#FACC15" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
+                    <polygon points="36,56 58,44 36,32 14,44" fill="#FDE047" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
+                    <polygon points="14,44 36,56 36,80 14,68" fill="#EAB308" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- Kubus Kanan Bawah (Biru) -->
+                    <polygon points="84,56 106,44 106,68 84,80" fill="#2563EB" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
+                    <polygon points="84,56 106,44 84,32 62,44" fill="#60A5FA" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
+                    <polygon points="62,44 84,56 84,80 62,68" fill="#3B82F6" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- Kubus Atas Tengah (Hijau) -->
+                    <polygon points="60,34 82,22 82,46 60,58" fill="#16A34A" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
+                    <polygon points="60,34 82,22 60,10 38,22" fill="#4ADE80" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
+                    <polygon points="38,22 60,34 60,58 38,46" fill="#22C55E" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <!-- Judul Besar & Subjudul -->
+            <div class="space-y-2">
+                <h1 class="text-4xl sm:text-6xl font-display font-bold text-amber-300 tracking-wide drop-shadow-md">
+                    MISI: SUSUN KUBUS!
+                </h1>
+                <p class="text-lg sm:text-2xl font-bold text-white/95 max-w-2xl mx-auto leading-snug">
+                    Ayo bangun kembali susunan kubus dari gambar tampak depan, kanan, dan atas!
+                </p>
+            </div>
+
+            <!-- Dua Tombol Utama: MULAI BERMAIN & MATERI & PETUNJUK -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 w-full sm:w-auto">
+                <button onclick="startFromHome('apersepsi')" class="btn-3d w-full sm:w-auto px-8 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 border-2 border-emerald-200 text-white font-extrabold text-lg sm:text-xl flex items-center justify-center gap-3 shadow-xl">
+                    <span>▶</span>
+                    <span>MULAI BERMAIN</span>
+                </button>
+                <button onclick="startFromHome('materi')" class="btn-3d w-full sm:w-auto px-8 py-4 rounded-2xl bg-amber-400 hover:bg-amber-300 border-2 border-amber-100 text-slate-900 font-extrabold text-lg sm:text-xl flex items-center justify-center gap-3 shadow-xl">
+                    <span>📖</span>
+                    <span>MATERI & PETUNJUK</span>
+                </button>
+            </div>
+
+            <!-- Pemilih Mode Siswa / Mode Guru -->
+            <div class="pt-2">
+                <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/25 shadow-inner">
+                    <span class="text-xs sm:text-sm font-bold text-indigo-100 px-1">Pilih Mode:</span>
+                    <button onclick="setUserMode('siswa')" id="mode-btn-siswa" class="px-4 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm transition-all text-white hover:bg-white/10">
+                        Mode Siswa
+                    </button>
+                    <button onclick="setUserMode('guru')" id="mode-btn-guru" class="px-4 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm transition-all bg-amber-400 text-slate-900 shadow">
+                        Mode Guru
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- HEADER & NAVIGASI UTAMA (OPTIMAL UNTUK PAPAN INTERAKTIF DIGITAL / PID) -->
+    <!-- ===================================================================== -->
+    <header id="main-app-header" class="hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-2 border-indigo-200 shadow-sm shrink-0">
+        <div class="w-full px-3 sm:px-5 py-2 flex flex-col lg:flex-row items-center justify-between gap-2">
+            <!-- Judul & Identitas Kelas -->
+            <div class="flex items-center gap-2.5">
+                <button onclick="switchSection('beranda')" title="Kembali ke Beranda" class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white flex items-center justify-center shadow-md shrink-0 transition">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                </button>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-base sm:text-xl font-bold text-slate-800 leading-tight">Merekonstruksi Susunan Kubus</h1>
+                        <span id="header-mode-badge" class="px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-800 text-[11px] font-extrabold">Mode Guru</span>
+                    </div>
+                    <p class="text-xs font-bold text-indigo-600">Matematika Kelas VI SD • Papan Interaktif Digital (PID)</p>
+                </div>
+            </div>
+
+            <!-- Navigasi Utama 4 Tahap Pembelajaran + Beranda -->
+            <nav class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                <button onclick="switchSection('beranda')" id="nav-beranda" class="nav-pill flex items-center gap-1.5 px-3.5 py-3 rounded-2xl font-bold text-sm sm:text-base bg-slate-100 hover:bg-indigo-50 text-slate-700 transition-all">
+                    <span>🏠</span>
+                    <span>Beranda</span>
+                </button>
+                <button onclick="switchSection('apersepsi')" id="nav-apersepsi" class="nav-pill flex items-center gap-2 px-4 py-3 rounded-2xl font-extrabold text-sm sm:text-base bg-indigo-600 text-white shadow-md transition-all">
+                    <span class="w-6 h-6 rounded-full bg-white/25 text-xs flex items-center justify-center font-black">1</span>
+                    <span>Apersepsi</span>
+                </button>
+                <button onclick="switchSection('materi')" id="nav-materi" class="nav-pill flex items-center gap-2 px-4 py-3 rounded-2xl font-bold text-sm sm:text-base bg-slate-100 hover:bg-indigo-50 text-slate-700 transition-all">
+                    <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs flex items-center justify-center font-black">2</span>
+                    <span>Materi</span>
+                </button>
+                <button onclick="switchSection('aktivitas')" id="nav-aktivitas" class="nav-pill flex items-center gap-2 px-4 py-3 rounded-2xl font-bold text-sm sm:text-base bg-slate-100 hover:bg-indigo-50 text-slate-700 transition-all">
+                    <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs flex items-center justify-center font-black">3</span>
+                    <span>Aktivitas Susun Kubus</span>
+                </button>
+                <button onclick="switchSection('asesmen')" id="nav-asesmen" class="nav-pill flex items-center gap-2 px-4 py-3 rounded-2xl font-bold text-sm sm:text-base bg-slate-100 hover:bg-indigo-50 text-slate-700 transition-all">
+                    <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs flex items-center justify-center font-black">4</span>
+                    <span>Asesmen Formatif</span>
+                </button>
+                <button onclick="toggleFullscreen()" title="Layar Penuh PID" class="px-3.5 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                    </svg>
+                    <span class="hidden xl:inline">Layar Penuh</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ===================================================================== -->
+    <!-- KONTEN UTAMA (ASPEK 16:9 OPTIMAL UNTUK PID)                           -->
+    <!-- ===================================================================== -->
+    <main id="main-app-content" class="hidden flex-1 w-full px-3 sm:px-5 py-3">
+
+        <!-- ===================================================================== -->
+        <!-- BAGIAN 1: APERSEPSI ("AYO MENGAMATI SUSUNAN KUBUS!")                  -->
+        <!-- ===================================================================== -->
+        <section id="section-apersepsi" class="fade-in space-y-4">
+            <!-- Header Pengantar Apersepsi -->
+            <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-md border-2 border-indigo-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <span class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 font-extrabold text-xs sm:text-sm">🔍 TAHAP 1 • APERSEPSI (ESTIMASI 5 MENIT)</span>
+                    <h2 class="text-xl sm:text-3xl font-bold text-slate-800">AYO MENGAMATI SUSUNAN KUBUS!</h2>
+                    <p class="text-sm sm:text-base font-bold text-slate-700">
+                        "Pernahkah kalian melihat sebuah benda dari depan, samping, dan atas? Apakah bentuk yang terlihat selalu sama?"
+                    </p>
+                    <p class="text-xs sm:text-sm font-extrabold text-indigo-600">👉 Mari kita amati tiga susunan kubus berikut!</p>
+                </div>
+
+                <!-- Pilihan 3 Susunan Kubus -->
+                <div class="grid grid-cols-3 gap-2 shrink-0">
+                    <button onclick="selectApersepsiModel(0)" id="ap-model-btn-0" class="btn-3d px-3.5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 bg-indigo-600 text-white border-indigo-700">
+                        Susunan 1<br><span class="text-[11px] font-semibold opacity-90">Sederhana</span>
+                    </button>
+                    <button onclick="selectApersepsiModel(1)" id="ap-model-btn-1" class="btn-3d px-3.5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 bg-slate-100 text-slate-700 border-slate-200 hover:bg-indigo-50">
+                        Susunan 2<br><span class="text-[11px] font-semibold opacity-80">Bertingkat</span>
+                    </button>
+                    <button onclick="selectApersepsiModel(2)" id="ap-model-btn-2" class="btn-3d px-3.5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 bg-slate-100 text-slate-700 border-slate-200 hover:bg-indigo-50">
+                        Susunan 3<br><span class="text-[11px] font-semibold opacity-80">Tak Beraturan</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grid Utama Apersepsi: Kiri (Model 3D), Kanan (Proyeksi 2D & Diskusi) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+                <!-- Kolom Kiri (7 Kolom): Model 3D Interaktif & Tombol Sudut Pandang -->
+                <div class="lg:col-span-7 bg-white rounded-3xl p-4 sm:p-5 shadow-md border-2 border-indigo-100 flex flex-col justify-between space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 id="ap-model-title" class="text-lg sm:text-xl font-bold text-slate-800">Susunan 1 – Bentuk Sederhana</h3>
+                            <p id="ap-model-desc" class="text-xs sm:text-sm font-semibold text-slate-600">Kubus disusun berdampingan dan bertumpuk.</p>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-xs font-bold">⬇️ Depan (Biru)</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-purple-600 text-white text-xs font-bold">➡️ Kanan (Ungu)</span>
+                        </div>
+                    </div>
+
+                    <div class="canvas-wrapper bg-gradient-to-b from-slate-50 to-indigo-50/50 rounded-2xl border-2 border-slate-200 h-[280px] sm:h-[320px] xl:h-[340px]">
+                        <div id="apersepsi-3d-container" class="w-full h-full"></div>
+                        <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 border border-slate-200 pointer-events-none">
+                            👆 Geser layar untuk memutar model 3D atau tekan tombol sudut pandang di bawah
+                        </div>
+                    </div>
+
+                    <!-- 4 Tombol Pengamatan Sudut Pandang -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <button onclick="setApersepsiView('front')" id="ap-btn-front" class="btn-3d py-3 px-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5">
+                            <span>👀</span> Tampak Depan
+                        </button>
+                        <button onclick="setApersepsiView('right')" id="ap-btn-right" class="btn-3d py-3 px-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5">
+                            <span>👉</span> Samping Kanan
+                        </button>
+                        <button onclick="setApersepsiView('top')" id="ap-btn-top" class="btn-3d py-3 px-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5">
+                            <span>🦅</span> Tampak Atas
+                        </button>
+                        <button onclick="setApersepsiView('3d')" id="ap-btn-3d" class="btn-3d py-3 px-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5">
+                            <span>🧊</span> Kembali ke 3D
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Kolom Kanan (5 Kolom): Proyeksi 2D Akurat + Pertanyaan Pengamatan Diskusi -->
+                <div class="lg:col-span-5 flex flex-col justify-between gap-4">
+                    <!-- Kartu Proyeksi 2D -->
+                    <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-md border-2 border-indigo-100 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg sm:text-xl font-bold text-slate-800">📐 Hasil Proyeksi Dua Dimensi</h3>
+                            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">Sesuai Model 3D</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2.5 text-center">
+                            <div id="ap-card-front" class="rounded-2xl p-3 border-2 border-blue-200 bg-blue-50/40 transition-all">
+                                <div class="text-xs sm:text-sm font-extrabold text-blue-700 mb-1.5">TAMPAK DEPAN</div>
+                                <div id="ap-grid-front" class="flex justify-center"></div>
+                                <div class="text-xs font-bold text-slate-500 mt-1.5">Kiri ◄─► Kanan</div>
+                            </div>
+                            <div id="ap-card-right" class="rounded-2xl p-3 border-2 border-purple-200 bg-purple-50/40 transition-all">
+                                <div class="text-xs sm:text-sm font-extrabold text-purple-700 mb-1.5">SAMPING KANAN</div>
+                                <div id="ap-grid-right" class="flex justify-center"></div>
+                                <div class="text-xs font-bold text-slate-500 mt-1.5">Depan ◄─► Belakang</div>
+                            </div>
+                            <div id="ap-card-top" class="rounded-2xl p-3 border-2 border-emerald-200 bg-emerald-50/40 transition-all">
+                                <div class="text-xs sm:text-sm font-extrabold text-emerald-700 mb-1.5">TAMPAK ATAS</div>
+                                <div id="ap-grid-top" class="flex justify-center"></div>
+                                <div class="text-xs font-bold text-slate-500 mt-1.5">Petak Terisi</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pertanyaan Pengamatan (Panduan Diskusi Guru & Siswa - Bukan Kuis) -->
+                    <div class="bg-amber-50 rounded-3xl p-4 sm:p-5 shadow-md border-2 border-amber-200 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center gap-2 text-amber-800 font-extrabold text-base sm:text-xl mb-2">
+                                <span>💬</span>
+                                <h3>Pertanyaan Pengamatan (Diskusi Kelas)</h3>
+                            </div>
+                            <ol class="list-decimal list-inside space-y-2 text-sm sm:text-base lg:text-lg font-bold text-slate-700">
+                                <li>Apa yang kalian lihat ketika mengamati susunan kubus dari depan?</li>
+                                <li>Apakah bentuknya sama ketika dilihat dari samping?</li>
+                                <li>Apa yang dapat diketahui dari tampak atas?</li>
+                                <li>Mengapa satu susunan kubus dapat terlihat berbeda dari tiga arah?</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Penutup Apersepsi -->
+            <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-md border-2 border-indigo-200 flex flex-col lg:flex-row items-center justify-between gap-3">
+                <div class="space-y-1 text-center lg:text-left">
+                    <div class="inline-block px-3 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-extrabold text-xs tracking-wide">
+                        ✨ SATU SUSUNAN KUBUS, TIGA TAMPILAN BERBEDA!
+                    </div>
+                    <p class="text-sm sm:text-lg font-bold text-slate-800">
+                        "Jika kalian hanya diberikan gambar tampak depan, samping, dan atas, bisakah kalian membangun kembali susunan kubus yang sebenarnya?"
+                    </p>
+                </div>
+                <button onclick="switchSection('materi')" class="btn-3d shrink-0 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-sm sm:text-base flex items-center gap-2 shadow-lg">
+                    <span>MULAI PEMBELAJARAN</span>
+                    <span class="text-lg">🚀</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- BAGIAN 2: MATERI PEMBELAJARAN ("MEREKONSTRUKSI SUSUNAN KUBUS")        -->
+        <!-- ===================================================================== -->
+        <section id="section-materi" class="hidden fade-in space-y-5">
+            <!-- Header Materi & Tujuan Pembelajaran -->
+            <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border-2 border-indigo-100">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div class="space-y-1.5">
+                        <span class="px-3.5 py-1 rounded-full bg-blue-100 text-blue-800 font-extrabold text-xs sm:text-sm">📘 TAHAP 2 • MATERI PEMBELAJARAN</span>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-slate-800">MEREKONSTRUKSI SUSUNAN KUBUS</h2>
+                        <p class="text-sm sm:text-lg text-slate-600 font-semibold">Pelajari informasi yang diberikan oleh setiap arah pengamatan berikut:</p>
+                    </div>
+                    <div class="bg-indigo-50 rounded-2xl p-4 border border-indigo-200 max-w-xl">
+                        <div class="text-xs sm:text-sm font-extrabold text-indigo-800 uppercase mb-1">🎯 Tujuan Pembelajaran:</div>
+                        <ul class="text-xs sm:text-base font-bold text-slate-700 space-y-1">
+                            <li>✓ Mengidentifikasi tampak depan, samping, dan atas susunan kubus.</li>
+                            <li>✓ Menjelaskan informasi yang diperoleh dari setiap tampilan 2D.</li>
+                            <li>✓ Menganalisis gambar 2D untuk merekonstruksi susunan kubus 3D.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3 Kartu Materi Inti -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- A. Tampak Depan -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border-2 border-blue-200 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <span class="w-11 h-11 rounded-2xl bg-blue-600 text-white font-display font-bold text-xl flex items-center justify-center shadow">A</span>
+                            <h3 class="text-xl sm:text-2xl font-bold text-blue-800">Tampak Depan</h3>
+                        </div>
+                        <p class="text-base sm:text-lg font-bold text-slate-700">
+                            Tampak depan adalah bentuk susunan kubus jika diamati dari arah depan.
+                        </p>
+                        <div class="bg-blue-50 rounded-2xl p-4 border border-blue-200 space-y-1.5">
+                            <div class="text-xs sm:text-sm font-extrabold text-blue-800 uppercase">Informasi yang diperoleh:</div>
+                            <ul class="text-sm sm:text-base font-bold text-slate-700 space-y-1">
+                                <li>• Posisi susunan secara mendatar (kiri – kanan).</li>
+                                <li>• Ketinggian tumpukan pada setiap posisi.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col items-center">
+                        <svg width="180" height="115" viewBox="0 0 180 115">
+                            <rect x="42" y="10" width="32" height="32" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3"/>
+                            <rect x="74" y="10" width="32" height="32" fill="#22C55E" stroke="#1E293B" stroke-width="2" rx="4"/>
+                            <rect x="106" y="10" width="32" height="32" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3"/>
+                            <rect x="42" y="42" width="32" height="32" fill="#3B82F6" stroke="#1E293B" stroke-width="2" rx="4"/>
+                            <rect x="74" y="42" width="32" height="32" fill="#EF4444" stroke="#1E293B" stroke-width="2" rx="4"/>
+                            <rect x="106" y="42" width="32" height="32" fill="#FACC15" stroke="#1E293B" stroke-width="2" rx="4"/>
+                            <line x1="30" y1="78" x2="150" y2="78" stroke="#1E293B" stroke-width="3.5" stroke-linecap="round"/>
+                            <text x="90" y="98" text-anchor="middle" font-size="12" font-weight="800" fill="#1D4ED8">Tinggi: Kiri=1, Tengah=2, Kanan=1</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- B. Tampak Samping -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border-2 border-purple-200 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <span class="w-11 h-11 rounded-2xl bg-purple-600 text-white font-display font-bold text-xl flex items-center justify-center shadow">B</span>
+                            <h3 class="text-xl sm:text-2xl font-bold text-purple-800">Tampak Samping</h3>
+                        </div>
+                        <p class="text-base sm:text-lg font-bold text-slate-700">
+                            Tampak samping adalah bentuk susunan kubus jika diamati dari arah samping kanan.
+                        </p>
+                        <div class="bg-purple-50 rounded-2xl p-4 border border-purple-200 space-y-1.5">
+                            <div class="text-xs sm:text-sm font-extrabold text-purple-800 uppercase">Informasi yang diperoleh:</div>
+                            <ul class="text-sm sm:text-base font-bold text-slate-700 space-y-1">
+                                <li>• Posisi susunan dari arah samping (depan – belakang).</li>
+                                <li>• Ketinggian tumpukan berdasarkan kedalaman susunan.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col items-center">
+                        <svg width="180" height="115" viewBox="0 0 180 115">
+                            <rect x="42" y="10" width="32" height="32" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3"/>
+                            <rect x="74" y="10" width="32" height="32" fill="#22C55E" stroke="#1E293B" stroke-width="2" rx="4"/>
+                            <rect x="106" y="10" width="32" height="32" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3"/>
+                            <rect x="42" y="42" width="32" height="32" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3"/>
+                            <rect x="74" y="42" width="32" height="32" fill="#FACC15" stroke="#1E293B" stroke-width="2" rx="4"/>
+                            <rect x="106" y="42" width="32" height="32" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3"/>
+                            <line x1="30" y1="78" x2="150" y2="78" stroke="#1E293B" stroke-width="3.5" stroke-linecap="round"/>
+                            <text x="90" y="98" text-anchor="middle" font-size="12" font-weight="800" fill="#6D28D9">Kedalaman: Baris Tengah = 2</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- C. Tampak Atas -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border-2 border-emerald-200 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <span class="w-11 h-11 rounded-2xl bg-emerald-600 text-white font-display font-bold text-xl flex items-center justify-center shadow">C</span>
+                            <h3 class="text-xl sm:text-2xl font-bold text-emerald-800">Tampak Atas</h3>
+                        </div>
+                        <p class="text-base sm:text-lg font-bold text-slate-700">
+                            Tampak atas adalah bentuk susunan kubus jika diamati dari arah atas.
+                        </p>
+                        <div class="bg-emerald-50 rounded-2xl p-4 border border-emerald-200 space-y-1.5">
+                            <div class="text-xs sm:text-sm font-extrabold text-emerald-800 uppercase">Informasi yang diperoleh:</div>
+                            <ul class="text-sm sm:text-base font-bold text-slate-700 space-y-1">
+                                <li>• Posisi atau letak kubus yang terisi.</li>
+                                <li>• Bentuk dasar & bagian mana saja yang ditempati kubus.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Ilustrasi Visual Tampak Atas yang Jelas -->
+                    <div class="space-y-2.5">
+                        <div class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200 flex flex-col items-center">
+                            <svg width="190" height="122" viewBox="0 0 190 122">
+                                <!-- Baris 1 (Belakang) -->
+                                <rect x="53" y="6" width="28" height="28" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3" rx="4"/>
+                                <rect x="81" y="6" width="28" height="28" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3" rx="4"/>
+                                <rect x="109" y="6" width="28" height="28" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3" rx="4"/>
+                                <!-- Baris 2 (Tengah - Terisi 3 petak mendatar) -->
+                                <rect x="53" y="34" width="28" height="28" fill="#3B82F6" stroke="#1E293B" stroke-width="2" rx="4"/>
+                                <rect x="81" y="34" width="28" height="28" fill="#22C55E" stroke="#1E293B" stroke-width="2" rx="4"/>
+                                <rect x="109" y="34" width="28" height="28" fill="#FACC15" stroke="#1E293B" stroke-width="2" rx="4"/>
+                                <!-- Baris 3 (Depan) -->
+                                <rect x="53" y="62" width="28" height="28" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3" rx="4"/>
+                                <rect x="81" y="62" width="28" height="28" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3" rx="4"/>
+                                <rect x="109" y="62" width="28" height="28" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="3 3" rx="4"/>
+                                <text x="95" y="108" text-anchor="middle" font-size="11.5" font-weight="800" fill="#047857">Petak Terisi: Baris Tengah (3 Petak)</text>
+                            </svg>
+                        </div>
+                        <div class="bg-amber-100 rounded-2xl p-3 border-2 border-amber-300 flex items-start gap-2.5">
+                            <span class="text-xl">⚠️</span>
+                            <p class="text-xs sm:text-sm font-extrabold text-amber-950 leading-snug">
+                                "Tampak atas menunjukkan posisi petak yang terisi, bukan tinggi tumpukan kubus."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panduan Tata Cara Menambahkan & Menghapus Kubus di Layar Interaktif -->
+            <div class="bg-emerald-50/90 rounded-3xl p-5 sm:p-6 shadow-md border-2 border-emerald-200 space-y-4">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-9 h-9 rounded-xl bg-emerald-600 text-white font-display font-bold text-lg flex items-center justify-center shadow-sm">🎮</span>
+                    <h3 class="text-lg sm:text-2xl font-bold text-emerald-950">Cara Bermain & Menyusun Kubus di Layar Interaktif</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <!-- Kartu 1: Cara Menambahkan Kubus -->
+                    <div class="bg-white rounded-2xl p-4 border-2 border-emerald-200 flex items-center gap-3.5 shadow-sm">
+                        <div class="w-12 h-12 shrink-0 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl font-black">
+                            ➕
+                        </div>
+                        <p class="text-sm sm:text-base font-bold text-slate-700 leading-snug">
+                            Pilih tombol <span class="text-emerald-700 font-extrabold">TAMBAH KUBUS</span> (dan pilih warna kubus), lalu <span class="text-slate-900 font-extrabold">sentuh petak alas</span> atau <span class="text-slate-900 font-extrabold">bagian atas kubus</span> untuk menumpuknya ke atas.
+                        </p>
+                    </div>
+
+                    <!-- Kartu 2: Cara Menghapus Kubus -->
+                    <div class="bg-white rounded-2xl p-4 border-2 border-rose-200 flex items-center gap-3.5 shadow-sm">
+                        <div class="w-12 h-12 shrink-0 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl font-black">
+                            ❌
+                        </div>
+                        <p class="text-sm sm:text-base font-bold text-slate-700 leading-snug">
+                            Pilih tombol <span class="text-rose-600 font-extrabold">HAPUS KUBUS</span>, lalu <span class="text-slate-900 font-extrabold">sentuh kubus</span> yang ingin dihapus untuk mengurangi tumpukan atau memperbaiki susunanmu.
+                        </p>
+                    </div>
+
+                    <!-- Kartu 3: Cara Memutar Tampilan -->
+                    <div class="bg-white rounded-2xl p-4 border-2 border-indigo-200 flex items-center gap-3.5 shadow-sm">
+                        <div class="w-12 h-12 shrink-0 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-2xl font-black">
+                            🔄
+                        </div>
+                        <p class="text-sm sm:text-base font-bold text-slate-700 leading-snug">
+                            <span class="text-slate-900 font-extrabold">Geser area 3D</span> atau tekan tombol <span class="text-indigo-700 font-extrabold">PUTAR / LIHAT DEPAN, KANAN, ATAS</span> untuk melihat bangun dari berbagai sisi.
+                        </p>
+                    </div>
+
+                    <!-- Kartu 4: Cara Memeriksa Susunan -->
+                    <div class="bg-white rounded-2xl p-4 border-2 border-amber-200 flex items-center gap-3.5 shadow-sm">
+                        <div class="w-12 h-12 shrink-0 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-2xl font-black">
+                            ✅
+                        </div>
+                        <p class="text-sm sm:text-base font-bold text-slate-700 leading-snug">
+                            Tekan <span class="text-amber-800 font-extrabold">PERIKSA SUSUNANKU</span> jika susunan kubusmu sudah sesuai dengan ketiga gambar tampak di samping.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Penutup Materi -->
+            <div class="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-5 sm:p-6 text-white shadow-lg flex flex-col lg:flex-row items-center justify-between gap-4">
+                <div class="space-y-1 text-center lg:text-left max-w-3xl">
+                    <span class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-indigo-200">💡 Kesimpulan Materi</span>
+                    <p class="text-base sm:text-xl font-bold leading-relaxed">
+                        "Untuk membangun kembali susunan kubus tiga dimensi, kita perlu memperhatikan tampak depan, samping, dan atas. Ketiga tampilan tersebut memberikan informasi yang saling melengkapi."
+                    </p>
+                </div>
+                <button onclick="switchSection('aktivitas')" class="btn-3d shrink-0 px-8 py-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-base sm:text-lg flex items-center gap-2.5 shadow-lg">
+                    <span>MULAI MISI SUSUN KUBUS</span>
+                    <span class="text-xl">🧱</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- BAGIAN 3: AKTIVITAS UTAMA ("MISI SUSUN KUBUS!" - 10 MISI)             -->
+        <!-- ===================================================================== -->
+        <section id="section-aktivitas" class="hidden fade-in space-y-4">
+            
+            <!-- Baris Atas: Judul Misi, Kelompok Level, & Navigasi 10 Misi -->
+            <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-md border-2 border-indigo-100 space-y-3.5">
+                <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3.5">
+                    <div class="flex items-start gap-3.5">
+                        <div id="mission-number-badge" class="w-13 h-13 w-12 h-12 shrink-0 rounded-2xl bg-blue-600 text-white font-display font-bold text-2xl flex items-center justify-center shadow-md">
+                            1
+                        </div>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="px-3 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-xs uppercase">Tahap 3 • Misi Susun Kubus!</span>
+                                <span id="mission-grid-badge" class="px-3 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-extrabold text-xs">Alas Maks: 2×2 | Tinggi: 2</span>
+                            </div>
+                            <h2 id="mission-title" class="text-xl sm:text-2xl font-bold text-slate-800 mt-1">Misi 1: Tangga Dua Tingkat</h2>
+                            <p id="mission-subtitle" class="text-sm sm:text-base text-slate-600 font-semibold">Amati tampak Depan, Kanan, dan Atas. Susun kubus pada papan 2×2!</p>
+                        </div>
+                    </div>
+
+                    <!-- Pilihan Kelompok Level L1, L2, L3 -->
+                    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                        <button onclick="selectMissionGroup(1)" id="lvl-btn-0" class="flex-1 lg:flex-initial px-4 py-3 rounded-2xl font-bold text-sm border-2 transition-all">
+                            ⭐ Level 1 (Misi 1–3)
+                        </button>
+                        <button onclick="selectMissionGroup(2)" id="lvl-btn-1" class="flex-1 lg:flex-initial px-4 py-3 rounded-2xl font-bold text-sm border-2 transition-all">
+                            ⭐⭐ Level 2 (Misi 4–7)
+                        </button>
+                        <button onclick="selectMissionGroup(3)" id="lvl-btn-2" class="flex-1 lg:flex-initial px-4 py-3 rounded-2xl font-bold text-sm border-2 transition-all">
+                            ⭐⭐⭐ Level 3 (Misi 8–10)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Strip Navigasi 10 Misi (Tombol Besar untuk PID) -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex flex-wrap items-center gap-2" id="mission-selector-pills"></div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="prevMission()" id="btn-prev-mission" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm disabled:opacity-40">
+                            ⬅️ Misi Sebelumnya
+                        </button>
+                        <button onclick="nextMission()" id="btn-next-mission" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm disabled:opacity-40">
+                            Misi Berikutnya ➡️
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layout 3 Kolom: Kiri (3 Gambar Target 2D), Tengah (Area Kerja 3D / Pilihan Model), Kanan (Kontrol Aktivitas) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+                
+                <!-- KOLOM KIRI (3 Kolom): 3 Gambar Target 2D -->
+                <div class="lg:col-span-3 bg-white rounded-3xl p-4 shadow-md border-2 border-slate-100 flex flex-col justify-between space-y-3">
+                    <div class="text-center border-b border-slate-100 pb-2">
+                        <h3 class="text-lg sm:text-xl font-bold text-slate-800">🎯 Gambar Tiga Sisi</h3>
+                        <p class="text-xs font-semibold text-slate-500">Perhatikan ketiga tampak ini!</p>
+                    </div>
+
+                    <div class="grid grid-cols-3 lg:grid-cols-1 gap-2.5 flex-1">
+                        <!-- Target Tampak Depan -->
+                        <div class="rounded-2xl p-2.5 border-2 border-blue-200 bg-blue-50/40 flex flex-col items-center justify-center">
+                            <div class="flex items-center justify-between w-full px-1 mb-1.5">
+                                <span class="px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] sm:text-xs font-bold">👀 TAMPAK DEPAN</span>
+                                <span class="text-[10px] font-bold text-blue-700 hidden sm:inline">Tinggi Kolom</span>
+                            </div>
+                            <div id="target-grid-front"></div>
+                            <span class="text-xs font-bold text-blue-800 mt-1">Kiri ◄───► Kanan</span>
+                        </div>
+
+                        <!-- Target Tampak Samping Kanan -->
+                        <div class="rounded-2xl p-2.5 border-2 border-purple-200 bg-purple-50/40 flex flex-col items-center justify-center">
+                            <div class="flex items-center justify-between w-full px-1 mb-1.5">
+                                <span class="px-2.5 py-0.5 rounded-full bg-purple-600 text-white text-[10px] sm:text-xs font-bold">👉 TAMPAK KANAN</span>
+                                <span class="text-[10px] font-bold text-purple-700 hidden sm:inline">Samping Kanan</span>
+                            </div>
+                            <div id="target-grid-right"></div>
+                            <span class="text-xs font-bold text-purple-800 mt-1">Depan ◄───► Belakang</span>
+                        </div>
+
+                        <!-- Target Tampak Atas -->
+                        <div class="rounded-2xl p-2.5 border-2 border-emerald-200 bg-emerald-50/40 flex flex-col items-center justify-center">
+                            <div class="flex items-center justify-between w-full px-1 mb-1.5">
+                                <span class="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] sm:text-xs font-bold">🦅 TAMPAK ATAS</span>
+                                <span class="text-[10px] font-bold text-emerald-700 hidden sm:inline">Posisi Alas</span>
+                            </div>
+                            <div id="target-grid-top"></div>
+                            <span class="text-xs font-bold text-emerald-800 mt-1">Depan di Bawah ▼</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KOLOM TENGAH (6 Kolom): Area Kerja 3D (Mode Susun) ATAU Pilihan Susunan A/B/C (Mode Analisis) -->
+                <div class="lg:col-span-6 bg-white rounded-3xl p-4 shadow-md border-2 border-indigo-100 flex flex-col justify-between space-y-3">
+                    
+                    <!-- MODE A: WORKSPACE SUSUN KUBUS 3D (Misi 1,2,3,4,5,7,8,10) -->
+                    <div id="workspace-build-mode" class="flex flex-col justify-between h-full space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs sm:text-sm font-bold shadow-sm">⬇️ Sisi DEPAN (Biru)</span>
+                                <span class="px-3 py-1.5 rounded-xl bg-purple-600 text-white text-xs sm:text-sm font-bold shadow-sm">➡️ Sisi KANAN (Ungu)</span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <button onclick="setBuilderCamera('front')" class="px-3 py-2 rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs sm:text-sm font-extrabold transition">👀 Lihat Depan</button>
+                                <button onclick="setBuilderCamera('right')" class="px-3 py-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs sm:text-sm font-extrabold transition">👉 Lihat Kanan</button>
+                                <button onclick="setBuilderCamera('top')" class="px-3 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs sm:text-sm font-extrabold transition">🦅 Lihat Atas</button>
+                                <button onclick="setBuilderCamera('3d')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-extrabold transition">🧊 3D</button>
+                            </div>
+                        </div>
+
+                        <div class="canvas-wrapper bg-gradient-to-b from-slate-50 to-indigo-50/40 rounded-2xl border-2 border-slate-200 h-[310px] sm:h-[350px] xl:h-[380px]">
+                            <div id="builder-3d-container" class="w-full h-full"></div>
+                            <div class="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+                                <div class="bg-white/95 backdrop-blur px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 shadow-sm border border-slate-200">
+                                    👆 Ketuk petak/kubus untuk aksi • Usap layar untuk memutar
+                                </div>
+                                <div class="bg-slate-800/90 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold">
+                                    Kubus: <span id="cube-count-display" class="text-amber-300 font-extrabold">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODE B: ANALISIS PILIHAN SUSUNAN A, B, C (Misi 6 & Misi 9) -->
+                    <div id="workspace-choice-mode" class="hidden flex-col justify-between h-full space-y-4 py-2">
+                        <div class="text-center space-y-1">
+                            <h3 id="choice-mode-prompt" class="text-xl sm:text-2xl font-bold text-slate-800">
+                                Amati ketiga gambar tampak di atas, lalu pilih model 3D manakah yang BENAR!
+                            </h3>
+                            <p class="text-sm sm:text-base font-semibold text-slate-500">Perhatikan panah DEPAN (biru) dan KANAN (ungu) pada setiap pilihan model.</p>
+                        </div>
+
+                        <div id="choice-cards-container" class="grid grid-cols-1 sm:grid-cols-3 gap-3 my-auto"></div>
+                    </div>
+
+                    <!-- Area Umpan Balik / Petunjuk Pemeriksaan -->
+                    <div id="builder-feedback-box" class="hidden rounded-2xl p-4 border-2 transition-all">
+                        <div class="flex items-start gap-3">
+                            <span id="builder-feedback-icon" class="text-2xl">💡</span>
+                            <div class="flex-1">
+                                <h4 id="builder-feedback-title" class="font-extrabold text-base sm:text-lg">Hasil Pemeriksaan</h4>
+                                <p id="builder-feedback-text" class="text-sm sm:text-base font-semibold mt-0.5"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KOLOM KANAN (3 Kolom): Kontrol Aktivitas -->
+                <div class="lg:col-span-3 bg-white rounded-3xl p-4 shadow-md border-2 border-slate-100 flex flex-col justify-between space-y-3">
+                    <div class="space-y-3">
+                        <div class="text-center border-b border-slate-100 pb-2">
+                            <h3 class="text-lg sm:text-xl font-bold text-slate-800">🛠️ Alat & Kontrol</h3>
+                        </div>
+
+                        <!-- Kontrol Khusus Mode Susun Kubus -->
+                        <div id="builder-tools-panel" class="space-y-3">
+                            <div class="grid grid-cols-2 lg:grid-cols-1 gap-2.5">
+                                <button onclick="setBuilderTool('add')" id="tool-btn-add" class="btn-3d py-3.5 px-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 border-2">
+                                    <span class="text-xl">➕</span> TAMBAH KUBUS
+                                </button>
+                                <button onclick="setBuilderTool('remove')" id="tool-btn-remove" class="btn-3d py-3.5 px-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 border-2">
+                                    <span class="text-xl">❌</span> HAPUS KUBUS
+                                </button>
+                            </div>
+
+                            <!-- Pilih Warna Kubus Satuan -->
+                            <div class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200">
+                                <div class="text-xs font-extrabold text-slate-600 uppercase text-center mb-2.5">Warna Kubus</div>
+                                <div class="flex items-center justify-center gap-3.5">
+                                    <button onclick="setCubeColor('#3B82F6')" id="color-btn-blue" class="color-swatch w-11 h-11 rounded-full bg-blue-500 border-4 border-slate-900 shadow-sm transition-transform scale-110" title="Biru"></button>
+                                    <button onclick="setCubeColor('#22C55E')" id="color-btn-green" class="color-swatch w-11 h-11 rounded-full bg-green-500 border-2 border-white shadow-sm transition-transform" title="Hijau"></button>
+                                    <button onclick="setCubeColor('#FACC15')" id="color-btn-yellow" class="color-swatch w-11 h-11 rounded-full bg-yellow-400 border-2 border-white shadow-sm transition-transform" title="Kuning"></button>
+                                    <button onclick="setCubeColor('#EF4444')" id="color-btn-red" class="color-swatch w-11 h-11 rounded-full bg-red-500 border-2 border-white shadow-sm transition-transform" title="Merah"></button>
+                                </div>
+                            </div>
+
+                            <!-- Kontrol Putar Model & Reset -->
+                            <div class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200 space-y-2.5">
+                                <div class="text-xs font-extrabold text-slate-600 uppercase text-center">Putar Tampilan</div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="rotateBuilderOrbit(-Math.PI/4)" class="py-3 px-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm btn-3d">
+                                        ↺ Kiri
+                                    </button>
+                                    <button onclick="rotateBuilderOrbit(Math.PI/4)" class="py-3 px-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm btn-3d">
+                                        Kanan ↻
+                                    </button>
+                                </div>
+                                <button onclick="resetBuilderBoard()" class="w-full py-2.5 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs sm:text-sm transition">
+                                    🔄 Reset Susunan Awal
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Info Khusus Mode Pilihan A/B/C -->
+                        <div id="choice-tools-panel" class="hidden bg-indigo-50 rounded-2xl p-4 border border-indigo-200 space-y-2 text-center">
+                            <span class="text-3xl">🧐</span>
+                            <div class="font-extrabold text-indigo-900 text-base">Misi Analisis Model 3D</div>
+                            <p class="text-xs sm:text-sm font-semibold text-indigo-800">
+                                Ketuk salah satu kartu <strong>Susunan A</strong>, <strong>Susunan B</strong>, atau <strong>Susunan C</strong> di tengah layar, lalu tekan tombol periksa di bawah!
+                            </p>
+                        </div>
+
+                        <!-- Status Misi Selesai -->
+                        <div class="bg-blue-900 text-white rounded-2xl p-3 flex items-center justify-around text-center">
+                            <div>
+                                <div class="text-[11px] uppercase font-bold text-blue-200">Misi Aktif</div>
+                                <div id="sidebar-mission-num" class="text-xl font-extrabold">1 / 10</div>
+                            </div>
+                            <div class="h-8 w-px bg-blue-700"></div>
+                            <div>
+                                <div class="text-[11px] uppercase font-bold text-blue-200">Tuntas</div>
+                                <div id="sidebar-completed-count" class="text-xl font-extrabold text-amber-300">0 / 10</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Pemeriksaan Utama -->
+                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <button onclick="checkUserConstruction()" class="btn-3d w-full py-4 px-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-base sm:text-lg flex items-center justify-center gap-2 shadow-md">
+                            <span>✅</span> PERIKSA SUSUNANKU
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Baris Bawah: Tombol Lanjut ke Asesmen Formatif -->
+            <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-md border-2 border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p class="text-sm sm:text-base font-bold text-slate-700 text-center sm:text-left">
+                    Sudah selesai berlatih merekonstruksi susunan kubus? Ayo uji pemahamanmu pada bagian akhir!
+                </p>
+                <button onclick="switchSection('asesmen')" class="btn-3d shrink-0 px-7 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm sm:text-base flex items-center gap-2">
+                    <span>LANJUT KE ASESMEN FORMATIF</span>
+                    <span>📝</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- BAGIAN 4: ASESMEN FORMATIF ("YUK, UJI PEMAHAMANMU!")                  -->
+        <!-- ===================================================================== -->
+        <section id="section-asesmen" class="hidden fade-in max-w-5xl mx-auto space-y-5">
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-5 sm:p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <span class="px-3 py-1 rounded-full bg-white/20 text-xs sm:text-sm font-extrabold uppercase">📝 TAHAP 4 • ASESMEN FORMATIF</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold mt-1">YUK, UJI PEMAHAMANMU!</h2>
+                    <p class="text-sm sm:text-base text-indigo-100 font-semibold">Jawablah 10 soal pilihan ganda berikut dengan teliti (5 soal konsep & 5 soal gambar susunan kubus).</p>
+                </div>
+                <div id="quiz-progress-badge" class="bg-white/20 backdrop-blur-sm px-5 py-3 rounded-2xl text-center shrink-0">
+                    <div class="text-xs font-bold uppercase text-indigo-100">Soal Nomor</div>
+                    <div id="quiz-counter-text" class="text-2xl sm:text-3xl font-display font-bold">1 / 10</div>
+                </div>
+            </div>
+
+            <!-- Container Soal Aktif -->
+            <div id="quiz-question-card" class="bg-white rounded-3xl p-5 sm:p-8 shadow-md border-2 border-indigo-100 space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex flex-wrap items-center gap-1.5" id="quiz-step-indicators"></div>
+                    <span id="quiz-topic-tag" class="text-xs sm:text-sm font-extrabold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl">
+                        Memahami Tampak Atas
+                    </span>
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-5 border-2 border-slate-200 space-y-4">
+                    <p id="quiz-question-text" class="text-lg sm:text-2xl font-bold text-slate-800 leading-relaxed"></p>
+                    <!-- Area Ilustrasi Soal (Tampak Depan / Samping / Atas) -->
+                    <div id="quiz-stimulus-container" class="hidden pt-2"></div>
+                </div>
+
+                <div id="quiz-options-container" class="grid grid-cols-1 gap-3"></div>
+
+                <div id="quiz-warning-msg" class="hidden rounded-2xl p-3.5 bg-amber-50 border-2 border-amber-300 text-amber-900 font-bold text-sm sm:text-base flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span>Masih ada soal yang belum dijawab. Silakan periksa kembali nomor soal di atas!</span>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t-2 border-slate-100">
+                    <button onclick="prevQuizQuestion()" id="quiz-prev-btn" class="btn-3d px-6 py-4 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold text-sm sm:text-base disabled:opacity-40 disabled:pointer-events-none">
+                        ⬅️ Soal Sebelumnya
+                    </button>
+
+                    <div class="flex items-center gap-3">
+                        <button onclick="nextQuizQuestion()" id="quiz-next-btn" class="btn-3d px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm sm:text-base">
+                            Soal Berikutnya ➡️
+                        </button>
+                        <button onclick="submitQuiz()" id="quiz-submit-btn" class="hidden btn-3d px-7 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm sm:text-base shadow-lg">
+                            ✅ KUMPULKAN JAWABAN
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Container Hasil Asesmen Formatif -->
+            <div id="quiz-result-card" class="hidden bg-white rounded-3xl p-6 sm:p-8 shadow-lg border-2 border-indigo-200 space-y-6">
+                <div class="text-center space-y-2">
+                    <span class="px-4 py-1 rounded-full bg-indigo-100 text-indigo-800 font-extrabold text-xs sm:text-sm uppercase">Hasil Penilaian</span>
+                    <h3 class="text-2xl sm:text-3xl font-bold text-slate-800">Asesmen Formatif</h3>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="bg-emerald-50 rounded-2xl p-4 border-2 border-emerald-200">
+                        <div class="text-sm font-extrabold text-emerald-700">Jawaban Benar</div>
+                        <div id="res-correct-count" class="text-3xl sm:text-4xl font-display font-bold text-emerald-600 mt-1">0</div>
+                    </div>
+                    <div class="bg-rose-50 rounded-2xl p-4 border-2 border-rose-200">
+                        <div class="text-sm font-extrabold text-rose-700">Jawaban Salah</div>
+                        <div id="res-wrong-count" class="text-3xl sm:text-4xl font-display font-bold text-rose-600 mt-1">0</div>
+                    </div>
+                    <div class="bg-indigo-600 text-white rounded-2xl p-4 shadow-md">
+                        <div class="text-sm font-extrabold text-indigo-100">Nilai Akhir</div>
+                        <div id="res-final-score" class="text-4xl sm:text-5xl font-display font-bold text-amber-300 mt-1">0</div>
+                    </div>
+                </div>
+
+                <div id="res-feedback-banner" class="rounded-2xl p-5 border-2 text-center space-y-1">
+                    <div id="res-feedback-emoji" class="text-4xl">🌟</div>
+                    <p id="res-feedback-message" class="text-lg sm:text-xl font-extrabold"></p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button onclick="toggleQuizReview()" class="btn-3d py-4 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm sm:text-base">
+                        📖 LIHAT PEMBAHASAN
+                    </button>
+                    <button onclick="resetQuiz()" class="btn-3d py-4 px-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-sm sm:text-base">
+                        🔄 ULANGI ASESMEN
+                    </button>
+                    <button onclick="switchSection('materi')" class="btn-3d py-4 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-sm sm:text-base">
+                        📚 KEMBALI KE PEMBELAJARAN
+                    </button>
+                </div>
+
+                <div id="quiz-review-list" class="hidden space-y-4 pt-4 border-t-2 border-slate-100">
+                    <h4 class="text-xl font-bold text-slate-800">Pembahasan Setiap Soal:</h4>
+                    <div id="quiz-review-items" class="space-y-3"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- SCRIPT LOGIKA 3D, PROYEKSI 2D, 10 MISI, & ASESMEN                     -->
+    <!-- ===================================================================== -->
+    <script>
+        /* ============================================================================
+           1. DATA MODEL & KONFIGURASI PEMBELAJARAN
+           ============================================================================ */
+        const APERSEPSI_MODELS = [
+            {
+                title: "Susunan 1 – Bentuk Sederhana",
+                desc: "Kubus disusun berdampingan dan bertumpuk. Bentuk mudah diamati dari depan, samping kanan, dan atas.",
+                gridSize: 3,
+                maxHeight: 3,
+                cubes: [
+                    { x: 0, y: 0, z: 1, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 1, color: '#22C55E' },
+                    { x: 1, y: 0, z: 1, color: '#FACC15' }
+                ]
+            },
+            {
+                title: "Susunan 2 – Bentuk Bertingkat",
+                desc: "Terdiri atas beberapa tumpukan kubus dengan ketinggian berbeda membentuk tangga bertingkat.",
+                gridSize: 3,
+                maxHeight: 3,
+                cubes: [
+                    { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 1, color: '#22C55E' },
+                    { x: 1, y: 1, z: 1, color: '#22C55E' },
+                    { x: 2, y: 0, z: 0, color: '#FACC15' },
+                    { x: 2, y: 1, z: 0, color: '#FACC15' },
+                    { x: 2, y: 2, z: 0, color: '#EF4444' }
+                ]
+            },
+            {
+                title: "Susunan 3 – Bentuk Tidak Beraturan",
+                desc: "Terdiri atas beberapa tumpukan kubus dengan posisi dan ketinggian bervariasi. Amati perubahan bentuk dari tiap sisi!",
+                gridSize: 3,
+                maxHeight: 3,
+                cubes: [
+                    { x: 0, y: 0, z: 2, color: '#FACC15' },
+                    { x: 2, y: 0, z: 2, color: '#EF4444' },
+                    { x: 2, y: 1, z: 2, color: '#EF4444' },
+                    { x: 0, y: 0, z: 0, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 0, color: '#3B82F6' },
+                    { x: 0, y: 2, z: 0, color: '#22C55E' }
+                ]
+            }
+        ];
+
+        // 10 MISI LENGKAP SESUAI GAMBAR YANG DIUNGGAH
+        const MISSIONS_DATA = [
+            {
+                id: 1,
+                group: 1,
+                type: 'build',
+                title: "Misi 1: Tangga Dua Tingkat",
+                subtitle: "Amati tampak Depan, Kanan, dan Atas. Susun kubus pada papan 2×2!",
+                gridSize: 2,
+                maxHeight: 2,
+                initialCubes: [],
+                targetCubes: [
+                    { x: 0, y: 0, z: 1, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 1, color: '#22C55E' },
+                    { x: 1, y: 0, z: 1, color: '#FACC15' }
+                ]
+            },
+            {
+                id: 2,
+                group: 1,
+                type: 'build',
+                title: "Misi 2: Sudut L Tinggi (Latihan 3.2 No. 5)",
+                subtitle: "Soal adaptasi Buku Kelas VI hal. 89! Susun kubus sesuai ketiga tampak.",
+                gridSize: 2,
+                maxHeight: 2,
+                initialCubes: [],
+                targetCubes: [
+                    { x: 0, y: 0, z: 1, color: '#FACC15' },
+                    { x: 0, y: 1, z: 1, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 1, color: '#EF4444' },
+                    { x: 0, y: 0, z: 0, color: '#22C55E' }
+                ]
+            },
+            {
+                id: 3,
+                group: 1,
+                type: 'build',
+                title: "Misi 3: Perbaiki Susunan Pemula",
+                subtitle: "Susunan di papan masih kurang tepat! Ubah atau tambah kubus agar sesuai gambar tampak.",
+                gridSize: 2,
+                maxHeight: 2,
+                initialCubes: [
+                    { x: 1, y: 0, z: 1, color: '#FACC15' },
+                    { x: 0, y: 0, z: 0, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 0, color: '#3B82F6' }
+                ],
+                targetCubes: [
+                    { x: 1, y: 0, z: 1, color: '#FACC15' },
+                    { x: 0, y: 0, z: 0, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 0, color: '#3B82F6' },
+                    { x: 1, y: 1, z: 0, color: '#22C55E' }
+                ]
+            },
+            {
+                id: 4,
+                group: 2,
+                type: 'build',
+                title: "Misi 4: Susunan Anike (Eksplorasi 3.2 Hal. 86)",
+                subtitle: "Bangun kembali susunan kubus yang digambar Anike pada halaman 86 buku Matematika!",
+                gridSize: 3,
+                maxHeight: 3,
+                initialCubes: [],
+                targetCubes: [
+                    { x: 0, y: 0, z: 1, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 1, color: '#EF4444' },
+                    { x: 1, y: 1, z: 1, color: '#22C55E' },
+                    { x: 2, y: 0, z: 1, color: '#FACC15' }
+                ]
+            },
+            {
+                id: 5,
+                group: 2,
+                type: 'build',
+                title: "Misi 5: Menara Tangga Tiga",
+                subtitle: "Susun tangga bertingkat 1, 2, dan 3 dengan memperhatikan posisi baris pada tampak atas.",
+                gridSize: 3,
+                maxHeight: 3,
+                initialCubes: [],
+                targetCubes: [
+                    { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 1, color: '#22C55E' },
+                    { x: 1, y: 1, z: 1, color: '#22C55E' },
+                    { x: 2, y: 0, z: 0, color: '#FACC15' },
+                    { x: 2, y: 1, z: 0, color: '#FACC15' },
+                    { x: 2, y: 2, z: 0, color: '#EF4444' }
+                ]
+            },
+            {
+                id: 6,
+                group: 2,
+                type: 'choice',
+                title: "Misi 6: Analisis Susunan yang Tepat",
+                subtitle: "Amati ketiga gambar tampak di atas, lalu pilih model 3D manakah yang BENAR!",
+                prompt: "Amati ketiga gambar tampak di atas, lalu pilih model 3D manakah yang BENAR!",
+                gridSize: 3,
+                maxHeight: 3,
+                targetCubes: [
+                    { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 2, color: '#22C55E' },
+                    { x: 2, y: 0, z: 2, color: '#FACC15' },
+                    { x: 2, y: 0, z: 1, color: '#EF4444' }
+                ],
+                choices: [
+                    {
+                        label: "Susunan A",
+                        isCorrect: false,
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 1, y: 0, z: 1, color: '#22C55E' },
+                            { x: 1, y: 1, z: 1, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        label: "Susunan B",
+                        isCorrect: false,
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 1, y: 1, z: 2, color: '#FACC15' },
+                            { x: 1, y: 0, z: 1, color: '#22C55E' },
+                            { x: 1, y: 1, z: 1, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        label: "Susunan C",
+                        isCorrect: true,
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 2, y: 0, z: 2, color: '#FACC15' },
+                            { x: 2, y: 0, z: 1, color: '#EF4444' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 7,
+                group: 2,
+                type: 'build',
+                title: "Misi 7: Perbaiki Susunan Jembatan",
+                subtitle: "Beberapa kubus salah tempat! Perbaiki susunan di papan agar cocok dengan gambar tampak.",
+                gridSize: 3,
+                maxHeight: 3,
+                initialCubes: [
+                    { x: 0, y: 0, z: 1, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 1, color: '#22C55E' },
+                    { x: 2, y: 0, z: 1, color: '#FACC15' }
+                ],
+                targetCubes: [
+                    { x: 0, y: 0, z: 1, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 1, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 1, color: '#FACC15' },
+                    { x: 1, y: 1, z: 1, color: '#22C55E' },
+                    { x: 2, y: 0, z: 1, color: '#FACC15' },
+                    { x: 2, y: 1, z: 1, color: '#FACC15' }
+                ]
+            },
+            {
+                id: 8,
+                group: 3,
+                type: 'build',
+                title: "Misi 8: Menara Sudut Tersembunyi",
+                subtitle: "Hati-hati! Ada kubus yang tertutup dari satu arah. Gunakan ketiga gambar tampak bersamaan!",
+                gridSize: 3,
+                maxHeight: 3,
+                initialCubes: [],
+                targetCubes: [
+                    { x: 0, y: 0, z: 2, color: '#FACC15' },
+                    { x: 2, y: 0, z: 2, color: '#EF4444' },
+                    { x: 2, y: 1, z: 2, color: '#EF4444' },
+                    { x: 0, y: 0, z: 0, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 0, color: '#3B82F6' },
+                    { x: 0, y: 2, z: 0, color: '#22C55E' }
+                ]
+            },
+            {
+                id: 9,
+                group: 3,
+                type: 'choice',
+                title: "Misi 9: Analisis Tiga Sisi Tampak",
+                subtitle: "Amati ketiga gambar tampak di atas dengan teliti, lalu pilih satu susunan yang TEPAT!",
+                prompt: "Amati ketiga gambar tampak di atas dengan teliti, lalu pilih satu susunan yang TEPAT!",
+                gridSize: 3,
+                maxHeight: 3,
+                targetCubes: [
+                    { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 2, color: '#22C55E' },
+                    { x: 1, y: 0, z: 1, color: '#22C55E' },
+                    { x: 1, y: 1, z: 1, color: '#FACC15' }
+                ],
+                choices: [
+                    {
+                        label: "Susunan A",
+                        isCorrect: false,
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 1, y: 1, z: 2, color: '#FACC15' },
+                            { x: 2, y: 0, z: 2, color: '#22C55E' }
+                        ]
+                    },
+                    {
+                        label: "Susunan B",
+                        isCorrect: true,
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 1, y: 0, z: 1, color: '#22C55E' },
+                            { x: 1, y: 1, z: 1, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        label: "Susunan C",
+                        isCorrect: false,
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 1, y: 0, z: 1, color: '#22C55E' },
+                            { x: 1, y: 1, z: 1, color: '#FACC15' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 10,
+                group: 3,
+                type: 'build',
+                title: "Misi 10: Misteri Lebih dari Satu Kemungkinan!",
+                subtitle: "Susunlah SALAH SATU bangun kubus yang cocok dengan ketiga gambar tampak di atas!",
+                gridSize: 3,
+                maxHeight: 3,
+                initialCubes: [],
+                targetCubes: [
+                    { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 2, color: '#22C55E' },
+                    { x: 0, y: 0, z: 1, color: '#22C55E' },
+                    { x: 1, y: 0, z: 1, color: '#FACC15' },
+                    { x: 1, y: 1, z: 1, color: '#EF4444' }
+                ]
+            }
+        ];
+
+        const QUIZ_QUESTIONS = [
+            {
+                id: 1,
+                topic: "Soal 1 – Memahami Tampak Atas",
+                question: "Ketika melihat susunan kubus dari arah atas, informasi utama yang dapat kita ketahui adalah ....",
+                options: [
+                    { key: "A", text: "Warna setiap kubus" },
+                    { key: "B", text: "Posisi atau letak kubus yang terisi" },
+                    { key: "C", text: "Tinggi setiap tumpukan kubus secara langsung" },
+                    { key: "D", text: "Jumlah sisi kubus yang terlihat dari depan" }
+                ],
+                correct: "B",
+                explanation: "Tampak atas menunjukkan denah alas berupa posisi atau letak petak kubus yang terisi, bukan tinggi tumpukannya."
+            },
+            {
+                id: 2,
+                topic: "Soal 2 – Memahami Tampak Depan",
+                question: "Rina melihat susunan kubus dari arah depan. Informasi yang paling mudah diamati adalah ....",
+                options: [
+                    { key: "A", text: "Ketinggian tumpukan kubus pada setiap posisi mendatar" },
+                    { key: "B", text: "Warna bagian bawah kubus" },
+                    { key: "C", text: "Bentuk susunan jika dilihat dari belakang" },
+                    { key: "D", text: "Jumlah kubus yang tersembunyi di bagian belakang" }
+                ],
+                correct: "A",
+                explanation: "Tampak depan memperlihatkan posisi mendatar (kiri ke kanan) beserta ketinggian tumpukan kubus tertinggi pada masing-masing kolom."
+            },
+            {
+                id: 3,
+                topic: "Soal 3 – Memahami Tampak Samping",
+                question: "Mengapa kita perlu mengamati susunan kubus dari arah samping?",
+                options: [
+                    { key: "A", text: "Agar mengetahui warna kubus" },
+                    { key: "B", text: "Agar dapat melihat susunan dari arah berbeda dan memperoleh informasi tambahan" },
+                    { key: "C", text: "Agar jumlah kubus otomatis bertambah" },
+                    { key: "D", text: "Agar semua kubus terlihat dari depan" }
+                ],
+                correct: "B",
+                explanation: "Pengamatan dari samping kanan memberikan informasi kedalaman susunan (depan ke belakang) yang tidak terlihat hanya dari tampak depan."
+            },
+            {
+                id: 4,
+                topic: "Soal 4 – Menganalisis Tiga Tampilan",
+                question: "Diketahui sebuah susunan kubus memiliki gambar tampak depan, samping, dan atas. Ketiga gambar tersebut digunakan bersama-sama karena ....",
+                options: [
+                    { key: "A", text: "Setiap gambar menunjukkan susunan kubus yang berbeda" },
+                    { key: "B", text: "Tampak atas selalu menunjukkan tinggi setiap tumpukan" },
+                    { key: "C", text: "Ketiga gambar memberikan informasi yang saling melengkapi tentang satu susunan kubus" },
+                    { key: "D", text: "Cukup menggunakan gambar tampak depan untuk mengetahui seluruh susunan" }
+                ],
+                correct: "C",
+                explanation: "Satu tampilan 2D saja belum cukup untuk menentukan bentuk 3D secara utuh. Tampak depan, samping, dan atas saling melengkapi informasi posisi dan ketinggian."
+            },
+            {
+                id: 5,
+                topic: "Soal 5 – Merekonstruksi Susunan Kubus",
+                question: "Budi diminta menyusun kubus berdasarkan tiga gambar, yaitu tampak depan, samping, dan atas. Langkah yang paling tepat adalah ....",
+                options: [
+                    { key: "A", text: "Menyusun kubus hanya berdasarkan gambar tampak depan" },
+                    { key: "B", text: "Memperkirakan bentuk tanpa memperhatikan gambar" },
+                    { key: "C", text: "Menggunakan ketiga gambar untuk menentukan posisi dan ketinggian susunan kubus" },
+                    { key: "D", text: "Menyusun kubus sebanyak mungkin agar terlihat tinggi" }
+                ],
+                correct: "C",
+                explanation: "Langkah merekonstruksi yang tepat adalah memadukan tampak atas untuk menentukan petak alas yang terisi, lalu tampak depan dan samping untuk mengatur ketinggian tiap tumpukan."
+            },
+            {
+                id: 6,
+                topic: "Soal 6 – Mencocokkan Tampak Depan",
+                question: "Perhatikan gambar TAMPAK DEPAN di bawah ini! Susunan kubus 3D manakah yang sesuai dengan gambar tampak depan tersebut?",
+                visualType: "single-projection",
+                gridSize: 3,
+                maxHeight: 3,
+                views: ["front"],
+                targetCubes: [
+                    { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 2, color: '#22C55E' },
+                    { x: 2, y: 0, z: 2, color: '#FACC15' }
+                ],
+                options: [
+                    {
+                        key: "A",
+                        text: "Susunan A",
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 2, y: 0, z: 2, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        key: "B",
+                        text: "Susunan B",
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 1, y: 1, z: 2, color: '#22C55E' },
+                            { x: 2, y: 0, z: 2, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        key: "C",
+                        text: "Susunan C",
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 2, y: 0, z: 2, color: '#FACC15' },
+                            { x: 2, y: 1, z: 2, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        key: "D",
+                        text: "Susunan D",
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                            { x: 2, y: 0, z: 2, color: '#FACC15' },
+                            { x: 2, y: 1, z: 2, color: '#FACC15' }
+                        ]
+                    }
+                ],
+                correct: "A",
+                explanation: "Dari tampak depan terlihat kolom kiri memiliki tinggi 2 kubus (biru), kolom tengah 1 kubus (hijau), dan kolom kanan 1 kubus (kuning). Susunan A tepat memenuhi pola tersebut."
+            },
+            {
+                id: 7,
+                topic: "Soal 7 – Mencocokkan Tampak Samping Kanan",
+                question: "Amati gambar TAMPAK SAMPING KANAN berikut! Susunan kubus manakah yang menghasilkan tampilan tersebut jika dilihat dari kanan?",
+                visualType: "single-projection",
+                gridSize: 3,
+                maxHeight: 3,
+                views: ["right"],
+                targetCubes: [
+                    { x: 1, y: 0, z: 2, color: '#FACC15' },
+                    { x: 1, y: 0, z: 1, color: '#22C55E' },
+                    { x: 1, y: 1, z: 1, color: '#EF4444' }
+                ],
+                options: [
+                    {
+                        key: "A",
+                        text: "Susunan A",
+                        cubes: [
+                            { x: 1, y: 0, z: 2, color: '#FACC15' },
+                            { x: 1, y: 1, z: 2, color: '#EF4444' },
+                            { x: 1, y: 0, z: 1, color: '#22C55E' }
+                        ]
+                    },
+                    {
+                        key: "B",
+                        text: "Susunan B",
+                        cubes: [
+                            { x: 1, y: 0, z: 2, color: '#FACC15' },
+                            { x: 1, y: 0, z: 1, color: '#22C55E' },
+                            { x: 1, y: 1, z: 1, color: '#EF4444' }
+                        ]
+                    },
+                    {
+                        key: "C",
+                        text: "Susunan C",
+                        cubes: [
+                            { x: 1, y: 0, z: 1, color: '#22C55E' },
+                            { x: 1, y: 0, z: 0, color: '#FACC15' },
+                            { x: 1, y: 1, z: 0, color: '#EF4444' }
+                        ]
+                    },
+                    {
+                        key: "D",
+                        text: "Susunan D",
+                        cubes: [
+                            { x: 1, y: 0, z: 2, color: '#FACC15' },
+                            { x: 1, y: 0, z: 0, color: '#22C55E' }
+                        ]
+                    }
+                ],
+                correct: "B",
+                explanation: "Pada tampak samping kanan, baris paling depan (kiri pada gambar tampak kanan) bertingkat 1 (kuning) dan baris tengah bertingkat 2 (hijau-merah), sehingga Susunan B paling sesuai."
+            },
+            {
+                id: 8,
+                topic: "Soal 8 – Mencocokkan Tampak Atas",
+                question: "Perhatikan gambar TAMPAK ATAS berikut! Susunan kubus manakah yang memiliki denah alas sesuai gambar tampak atas tersebut?",
+                visualType: "single-projection",
+                gridSize: 3,
+                maxHeight: 3,
+                views: ["top"],
+                targetCubes: [
+                    { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 2, color: '#22C55E' },
+                    { x: 1, y: 1, z: 2, color: '#22C55E' },
+                    { x: 1, y: 0, z: 1, color: '#FACC15' },
+                    { x: 2, y: 0, z: 1, color: '#EF4444' }
+                ],
+                options: [
+                    {
+                        key: "A",
+                        text: "Susunan A",
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 2, y: 0, z: 2, color: '#EF4444' }
+                        ]
+                    },
+                    {
+                        key: "B",
+                        text: "Susunan B",
+                        cubes: [
+                            { x: 0, y: 0, z: 1, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 1, color: '#22C55E' },
+                            { x: 1, y: 0, z: 2, color: '#FACC15' },
+                            { x: 2, y: 0, z: 2, color: '#EF4444' }
+                        ]
+                    },
+                    {
+                        key: "C",
+                        text: "Susunan C",
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 1, y: 1, z: 2, color: '#22C55E' },
+                            { x: 1, y: 0, z: 1, color: '#FACC15' },
+                            { x: 2, y: 0, z: 1, color: '#EF4444' }
+                        ]
+                    },
+                    {
+                        key: "D",
+                        text: "Susunan D",
+                        cubes: [
+                            { x: 0, y: 0, z: 0, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 0, color: '#22C55E' },
+                            { x: 2, y: 0, z: 0, color: '#EF4444' }
+                        ]
+                    }
+                ],
+                correct: "C",
+                explanation: "Tampak atas menunjukkan baris depan terisi di petak kiri (biru) dan tengah (hijau), sedangkan baris tengah terisi di petak tengah (kuning) dan kanan (merah), yang cocok dengan Susunan C."
+            },
+            {
+                id: 9,
+                topic: "Soal 9 – Analisis Tiga Sisi (Alas 2×2)",
+                question: "Perhatikan gambar TAMPAK DEPAN, TAMPAK KANAN, dan TAMPAK ATAS berikut! Susunan kubus manakah yang cocok dengan ketiga tampilan tersebut?",
+                visualType: "multi-projection",
+                gridSize: 2,
+                maxHeight: 2,
+                views: ["front", "right", "top"],
+                targetCubes: [
+                    { x: 0, y: 0, z: 1, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 1, color: '#22C55E' },
+                    { x: 1, y: 0, z: 1, color: '#FACC15' }
+                ],
+                options: [
+                    {
+                        key: "A",
+                        text: "Susunan A",
+                        cubes: [
+                            { x: 0, y: 0, z: 1, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 1, color: '#22C55E' },
+                            { x: 1, y: 0, z: 0, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        key: "B",
+                        text: "Susunan B",
+                        cubes: [
+                            { x: 0, y: 0, z: 1, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 1, color: '#22C55E' },
+                            { x: 1, y: 0, z: 1, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        key: "C",
+                        text: "Susunan C",
+                        cubes: [
+                            { x: 0, y: 0, z: 0, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 0, color: '#22C55E' },
+                            { x: 1, y: 0, z: 1, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        key: "D",
+                        text: "Susunan D",
+                        cubes: [
+                            { x: 1, y: 0, z: 1, color: '#FACC15' },
+                            { x: 1, y: 1, z: 1, color: '#22C55E' },
+                            { x: 0, y: 0, z: 1, color: '#3B82F6' }
+                        ]
+                    }
+                ],
+                correct: "B",
+                explanation: "Dari tampak atas hanya baris depan yang terisi, dan dari tampak depan tumpukan setinggi 2 kubus berada di sisi kiri depan. Jadi Susunan B adalah jawaban yang tepat."
+            },
+            {
+                id: 10,
+                topic: "Soal 10 – Rekonstruksi Tiga Sisi (Alas 3×3)",
+                question: "Amati ketiga gambar tampak berikut dengan teliti! Model susunan kubus 3D manakah yang paling tepat?",
+                visualType: "multi-projection",
+                gridSize: 3,
+                maxHeight: 3,
+                views: ["front", "right", "top"],
+                targetCubes: [
+                    { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                    { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                    { x: 1, y: 0, z: 2, color: '#22C55E' },
+                    { x: 2, y: 0, z: 2, color: '#FACC15' },
+                    { x: 2, y: 0, z: 1, color: '#EF4444' }
+                ],
+                options: [
+                    {
+                        key: "A",
+                        text: "Susunan A",
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 1, y: 0, z: 1, color: '#22C55E' },
+                            { x: 1, y: 1, z: 1, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        key: "B",
+                        text: "Susunan B",
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 2, y: 0, z: 2, color: '#FACC15' }
+                        ]
+                    },
+                    {
+                        key: "C",
+                        text: "Susunan C",
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 2, y: 0, z: 2, color: '#FACC15' },
+                            { x: 2, y: 1, z: 2, color: '#EF4444' },
+                            { x: 2, y: 0, z: 1, color: '#EF4444' }
+                        ]
+                    },
+                    {
+                        key: "D",
+                        text: "Susunan D",
+                        cubes: [
+                            { x: 0, y: 0, z: 2, color: '#3B82F6' },
+                            { x: 0, y: 1, z: 2, color: '#3B82F6' },
+                            { x: 1, y: 0, z: 2, color: '#22C55E' },
+                            { x: 2, y: 0, z: 2, color: '#FACC15' },
+                            { x: 2, y: 0, z: 1, color: '#EF4444' }
+                        ]
+                    }
+                ],
+                correct: "D",
+                explanation: "Tampak atas memperlihatkan bentuk huruf L terbalik di depan-kanan, tampak depan menunjukkan tinggi kiri = 2, tengah = 1, kanan = 1, dan tampak kanan menunjukkan kedalaman baris kedua terisi kubus merah. Susunan D memenuhi semua syarat."
+            }
+        ];
+
+        /* ============================================================================
+           2. STATE APLIKASI GLOBAL
+           ============================================================================ */
+        let currentSection = 'beranda';
+        let userMode = 'guru';
+        let currentApModelIdx = 0;
+        let currentMissionIndex = 0;
+        let builderCubes = [];
+        let builderTool = 'add';
+        let selectedCubeColor = '#3B82F6';
+        let selectedChoiceIdx = null;
+        let completedMissions = new Set();
+
+        let apersepsiScene = null;
+        let builderScene = null;
+
+        let currentQuizIdx = 0;
+        let userQuizAnswers = new Array(QUIZ_QUESTIONS.length).fill(null);
+        let isQuizSubmitted = false;
+
+        /* ============================================================================
+           3. ENGINE 3D (THREE.JS) UNTUK VISUALISASI & PENYUSUNAN KUBUS
+           ============================================================================ */
+        class CubeSceneManager {
+            constructor(containerId, options = {}) {
+                this.container = document.getElementById(containerId);
+                this.interactive = Boolean(options.interactive);
+                this.onCellInteract = options.onCellInteract || null;
+                this.gridSize = 3;
+                this.cubes = [];
+
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+                if (this.container) {
+                    this.container.innerHTML = '';
+                    this.container.appendChild(this.renderer.domElement);
+                }
+
+                // Pencahayaan lembut dan jelas
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.78);
+                this.scene.add(ambientLight);
+
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.52);
+                dirLight.position.set(6, 12, 8);
+                this.scene.add(dirLight);
+
+                const backLight = new THREE.DirectionalLight(0xe0e7ff, 0.25);
+                backLight.position.set(-6, 5, -6);
+                this.scene.add(backLight);
+
+                // Grup untuk alas kisi & kubus satuan
+                this.boardGroup = new THREE.Group();
+                this.cubesGroup = new THREE.Group();
+                this.scene.add(this.boardGroup);
+                this.scene.add(this.cubesGroup);
+
+                // Parameter Kamera Orbit
+                this.theta = Math.PI / 4;
+                this.phi = Math.PI / 3.1;
+                this.radius = 7.4;
+                this.targetTheta = this.theta;
+                this.targetPhi = this.phi;
+                this.targetRadius = this.radius;
+
+                // Raycasting & Kontrol Sentuh/Mouse PID
+                this.raycaster = new THREE.Raycaster();
+                this.pointerDownPos = null;
+                this.isDragging = false;
+                this.lastPointer = { x: 0, y: 0 };
+
+                this.initEvents();
+                this.buildBoard(3);
+                this.resize();
+            }
+
+            initEvents() {
+                if (!this.container) return;
+                const dom = this.renderer.domElement;
+
+                dom.addEventListener('pointerdown', (e) => {
+                    this.isDragging = true;
+                    this.pointerDownPos = { x: e.clientX, y: e.clientY };
+                    this.lastPointer = { x: e.clientX, y: e.clientY };
+                });
+
+                window.addEventListener('pointermove', (e) => {
+                    if (!this.isDragging) return;
+                    const dx = e.clientX - this.lastPointer.x;
+                    const dy = e.clientY - this.lastPointer.y;
+                    this.lastPointer = { x: e.clientX, y: e.clientY };
+
+                    this.targetTheta -= dx * 0.011;
+                    this.targetPhi = Math.max(0.18, Math.min(Math.PI / 2.15, this.targetPhi - dy * 0.011));
+                });
+
+                window.addEventListener('pointerup', (e) => {
+                    if (!this.isDragging) return;
+                    this.isDragging = false;
+
+                    if (this.interactive && this.pointerDownPos) {
+                        const dist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
+                        if (dist < 10) {
+                            this.handleTap(e);
+                        }
+                    }
+                    this.pointerDownPos = null;
+                });
+            }
+
+            handleTap(event) {
+                if (!this.onCellInteract) return;
+                const rect = this.renderer.domElement.getBoundingClientRect();
+                const mouse = new THREE.Vector2(
+                    ((event.clientX - rect.left) / rect.width) * 2 - 1,
+                    -((event.clientY - rect.top) / rect.height) * 2 + 1
+                );
+
+                this.raycaster.setFromCamera(mouse, this.camera);
+
+                // Periksa ketukan pada kubus terlebih dahulu
+                const cubeMeshes = this.cubesGroup.children.filter(obj => obj.userData && obj.userData.type === 'cube');
+                const cubeHits = this.raycaster.intersectObjects(cubeMeshes, false);
+
+                if (cubeHits.length > 0) {
+                    const hit = cubeHits[0];
+                    const data = hit.object.userData;
+                    const normal = hit.face ? hit.face.normal : new THREE.Vector3(0, 1, 0);
+                    this.onCellInteract({
+                        targetType: 'cube',
+                        x: data.x,
+                        y: data.y,
+                        z: data.z,
+                        normal: {
+                            x: Math.round(normal.x),
+                            y: Math.round(normal.y),
+                            z: Math.round(normal.z)
+                        }
+                    });
+                    return;
+                }
+
+                // Periksa ketukan pada petak papan alas
+                const tileMeshes = this.boardGroup.children.filter(obj => obj.userData && obj.userData.type === 'tile');
+                const tileHits = this.raycaster.intersectObjects(tileMeshes, false);
+                if (tileHits.length > 0) {
+                    const data = tileHits[0].object.userData;
+                    this.onCellInteract({
+                        targetType: 'tile',
+                        x: data.x,
+                        y: 0,
+                        z: data.z
+                    });
+                }
+            }
+
+            buildBoard(gridSize) {
+                this.gridSize = gridSize;
+                while (this.boardGroup.children.length > 0) {
+                    this.boardGroup.remove(this.boardGroup.children[0]);
+                }
+
+                const offset = (gridSize - 1) / 2;
+                const tileGeo = new THREE.BoxGeometry(0.95, 0.12, 0.95);
+                const edgeGeo = new THREE.EdgesGeometry(tileGeo);
+                const edgeMat = new THREE.LineBasicMaterial({ color: 0x94A3B8 });
+
+                for (let x = 0; x < gridSize; x++) {
+                    for (let z = 0; z < gridSize; z++) {
+                        const tileMat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+                        const tile = new THREE.Mesh(tileGeo, tileMat);
+                        tile.position.set(x - offset, -0.06, z - offset);
+                        tile.userData = { type: 'tile', x, z };
+                        this.boardGroup.add(tile);
+
+                        const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+                        edges.position.copy(tile.position);
+                        this.boardGroup.add(edges);
+                    }
+                }
+
+                // Penanda Sisi DEPAN (Biru) pada z = gridSize - 1 (+Z)
+                const frontBarGeo = new THREE.BoxGeometry(gridSize * 0.98, 0.14, 0.14);
+                const frontBarMat = new THREE.MeshLambertMaterial({ color: 0x2563EB });
+                const frontBar = new THREE.Mesh(frontBarGeo, frontBarMat);
+                frontBar.position.set(0, -0.05, offset + 0.58);
+                this.boardGroup.add(frontBar);
+
+                // Penanda Sisi KANAN (Ungu) pada x = gridSize - 1 (+X)
+                const rightBarGeo = new THREE.BoxGeometry(0.14, 0.14, gridSize * 0.98);
+                const rightBarMat = new THREE.MeshLambertMaterial({ color: 0x9333EA });
+                const rightBar = new THREE.Mesh(rightBarGeo, rightBarMat);
+                rightBar.position.set(offset + 0.58, -0.05, 0);
+                this.boardGroup.add(rightBar);
+            }
+
+            setCubes(cubesList) {
+                this.cubes = cubesList.map(c => ({ ...c }));
+                while (this.cubesGroup.children.length > 0) {
+                    this.cubesGroup.remove(this.cubesGroup.children[0]);
+                }
+
+                const offset = (this.gridSize - 1) / 2;
+                const boxGeo = new THREE.BoxGeometry(0.96, 0.96, 0.96);
+                const edgesGeo = new THREE.EdgesGeometry(boxGeo);
+                const edgesMat = new THREE.LineBasicMaterial({ color: 0x1E293B, linewidth: 2 });
+
+                this.cubes.forEach(c => {
+                    const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color(c.color || '#3B82F6') });
+                    const mesh = new THREE.Mesh(boxGeo, mat);
+                    mesh.position.set(c.x - offset, c.y + 0.48, c.z - offset);
+                    mesh.userData = { type: 'cube', x: c.x, y: c.y, z: c.z };
+                    this.cubesGroup.add(mesh);
+
+                    const outline = new THREE.LineSegments(edgesGeo, edgesMat);
+                    outline.position.copy(mesh.position);
+                    this.cubesGroup.add(outline);
+                });
+            }
+
+            setCameraPreset(view) {
+                if (view === 'front') {
+                    this.targetTheta = 0;
+                    this.targetPhi = Math.PI / 2.08;
+                    this.targetRadius = this.gridSize === 2 ? 6.2 : 7.4;
+                } else if (view === 'right') {
+                    this.targetTheta = Math.PI / 2;
+                    this.targetPhi = Math.PI / 2.08;
+                    this.targetRadius = this.gridSize === 2 ? 6.2 : 7.4;
+                } else if (view === 'top') {
+                    this.targetTheta = 0.0001;
+                    this.targetPhi = 0.06;
+                    this.targetRadius = this.gridSize === 2 ? 6.2 : 7.4;
+                } else {
+                    this.targetTheta = Math.PI / 4;
+                    this.targetPhi = Math.PI / 3.1;
+                    this.targetRadius = this.gridSize === 2 ? 6.2 : 7.4;
+                }
+            }
+
+            rotateBy(deltaTheta) {
+                this.targetTheta += deltaTheta;
+            }
+
+            resize() {
+                if (!this.container) return;
+                const width = this.container.clientWidth || 400;
+                const height = this.container.clientHeight || 300;
+                this.camera.aspect = width / height;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(width, height, false);
+            }
+
+            render() {
+                this.theta += (this.targetTheta - this.theta) * 0.14;
+                this.phi += (this.targetPhi - this.phi) * 0.14;
+                this.radius += (this.targetRadius - this.radius) * 0.14;
+
+                const centerY = 0.85;
+                this.camera.position.x = this.radius * Math.sin(this.phi) * Math.sin(this.theta);
+                this.camera.position.y = centerY + this.radius * Math.cos(this.phi);
+                this.camera.position.z = this.radius * Math.sin(this.phi) * Math.cos(this.theta);
+                this.camera.lookAt(0, centerY, 0);
+
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        function animateLoop() {
+            requestAnimationFrame(animateLoop);
+            if (apersepsiScene) apersepsiScene.render();
+            if (builderScene) builderScene.render();
+        }
+
+        /* ============================================================================
+           4. PROYEKSI 2D AKURAT & RENDERER SVG
+           ============================================================================ */
+        function computeProjections(cubes, gridSize, maxHeight) {
+            // Tampak Depan: kolom x (0..gridSize-1), baris ketinggian y (0..maxHeight-1)
+            // Mengambil kubus paling depan (z terbesar) pada setiap (x, y)
+            const front = Array.from({ length: maxHeight }, () => Array(gridSize).fill(null));
+            for (let x = 0; x < gridSize; x++) {
+                for (let y = 0; y < maxHeight; y++) {
+                    const colCubes = cubes.filter(c => c.x === x && c.y === y);
+                    if (colCubes.length > 0) {
+                        colCubes.sort((a, b) => b.z - a.z);
+                        front[y][x] = colCubes[0].color || '#3B82F6';
+                    }
+                }
+            }
+
+            // Tampak Samping Kanan: kolom z terbalik (depan di kiri: z = gridSize-1 ke 0), baris y
+            // Mengambil kubus paling kanan (x terbesar) pada setiap (z, y)
+            const right = Array.from({ length: maxHeight }, () => Array(gridSize).fill(null));
+            for (let colIdx = 0; colIdx < gridSize; colIdx++) {
+                const z = gridSize - 1 - colIdx;
+                for (let y = 0; y < maxHeight; y++) {
+                    const rowCubes = cubes.filter(c => c.z === z && c.y === y);
+                    if (rowCubes.length > 0) {
+                        rowCubes.sort((a, b) => b.x - a.x);
+                        right[y][colIdx] = rowCubes[0].color || '#3B82F6';
+                    }
+                }
+            }
+
+            // Tampak Atas: baris z (0 = belakang di atas, gridSize-1 = depan di bawah), kolom x (0..gridSize-1)
+            // Mengambil kubus paling atas (y terbesar) pada setiap (x, z) - tanpa menampilkan ketinggian
+            const top = Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
+            for (let z = 0; z < gridSize; z++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const stackCubes = cubes.filter(c => c.x === x && c.z === z);
+                    if (stackCubes.length > 0) {
+                        stackCubes.sort((a, b) => b.y - a.y);
+                        top[z][x] = stackCubes[0].color || '#3B82F6';
+                    }
+                }
+            }
+
+            return { front, right, top };
+        }
+
+        function renderProjectionSVG(matrix, isTopView = false, cellSize = 26) {
+            const rows = matrix.length;
+            const cols = matrix[0].length;
+            const pad = 4;
+            const w = cols * cellSize + pad * 2;
+            const h = rows * cellSize + pad * 2 + (isTopView ? 0 : 4);
+
+            let rects = '';
+            for (let r = 0; r < rows; r++) {
+                // Untuk tampilan samping/depan, y=0 berada di bagian bawah
+                const visualRow = isTopView ? r : (rows - 1 - r);
+                for (let c = 0; c < cols; c++) {
+                    const color = matrix[r][c];
+                    const xPos = pad + c * cellSize;
+                    const yPos = pad + visualRow * cellSize;
+                    if (color) {
+                        rects += `<rect x="${xPos + 1}" y="${yPos + 1}" width="${cellSize - 2}" height="${cellSize - 2}" rx="4" fill="${color}" stroke="#1E293B" stroke-width="2"/>`;
+                    } else {
+                        rects += `<rect x="${xPos + 1}" y="${yPos + 1}" width="${cellSize - 2}" height="${cellSize - 2}" rx="4" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="3 2"/>`;
+                    }
+                }
+            }
+
+            if (!isTopView) {
+                const baseY = pad + rows * cellSize + 2;
+                rects += `<line x1="${pad}" y1="${baseY}" x2="${w - pad}" y2="${baseY}" stroke="#1E293B" stroke-width="3" stroke-linecap="round"/>`;
+            }
+
+            return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="mx-auto">${rects}</svg>`;
+        }
+
+        function renderIsometricPreviewSVG(cubes, gridSize = 3, scale = 17) {
+            const w = 136;
+            const h = 114;
+            const cx = w / 2;
+            const cy = 72;
+            const cos30 = 0.866;
+            const sin30 = 0.5;
+            const offset = (gridSize - 1) / 2;
+
+            const iso = (x, y, z) => {
+                const sx = cx + (x - z) * scale * cos30;
+                const sy = cy + (x + z) * scale * sin30 - y * scale;
+                return `${sx.toFixed(1)},${sy.toFixed(1)}`;
+            };
+
+            let svg = '';
+            // Gambar kisi alas
+            for (let x = 0; x < gridSize; x++) {
+                for (let z = 0; z < gridSize; z++) {
+                    const gx = x - offset;
+                    const gz = z - offset;
+                    const p1 = iso(gx - 0.5, 0, gz - 0.5);
+                    const p2 = iso(gx + 0.5, 0, gz - 0.5);
+                    const p3 = iso(gx + 0.5, 0, gz + 0.5);
+                    const p4 = iso(gx - 0.5, 0, gz + 0.5);
+                    svg += `<polygon points="${p1} ${p2} ${p3} ${p4}" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>`;
+                }
+            }
+
+            // Garis penanda Depan (Biru) dan Kanan (Ungu)
+            const f1 = iso(-offset - 0.5, 0, offset + 0.55);
+            const f2 = iso(offset + 0.5, 0, offset + 0.55);
+            svg += `<line x1="${f1.split(',')[0]}" y1="${f1.split(',')[1]}" x2="${f2.split(',')[0]}" y2="${f2.split(',')[1]}" stroke="#2563EB" stroke-width="3" stroke-linecap="round"/>`;
+
+            const r1 = iso(offset + 0.55, 0, -offset - 0.5);
+            const r2 = iso(offset + 0.55, 0, offset + 0.5);
+            svg += `<line x1="${r1.split(',')[0]}" y1="${r1.split(',')[1]}" x2="${r2.split(',')[0]}" y2="${r2.split(',')[1]}" stroke="#9333EA" stroke-width="3" stroke-linecap="round"/>`;
+
+            // Urutkan kubus dari belakang ke depan agar tumpukan visual benar
+            const sorted = [...cubes].sort((a, b) => (a.x + a.z + a.y * 0.01) - (b.x + b.z + b.y * 0.01));
+            const shadeMap = {
+                '#3B82F6': { top: '#60A5FA', left: '#3B82F6', right: '#2563EB' },
+                '#22C55E': { top: '#4ADE80', left: '#22C55E', right: '#16A34A' },
+                '#FACC15': { top: '#FDE047', left: '#FACC15', right: '#EAB308' },
+                '#EF4444': { top: '#F87171', left: '#EF4444', right: '#DC2626' }
+            };
+
+            sorted.forEach(c => {
+                const gx = c.x - offset;
+                const gz = c.z - offset;
+                const y0 = c.y;
+                const y1 = c.y + 1;
+                const colors = shadeMap[c.color] || shadeMap['#3B82F6'];
+
+                const t1 = iso(gx - 0.5, y1, gz - 0.5);
+                const t2 = iso(gx + 0.5, y1, gz - 0.5);
+                const t3 = iso(gx + 0.5, y1, gz + 0.5);
+                const t4 = iso(gx - 0.5, y1, gz + 0.5);
+
+                const b2 = iso(gx + 0.5, y0, gz - 0.5);
+                const b3 = iso(gx + 0.5, y0, gz + 0.5);
+                const b4 = iso(gx - 0.5, y0, gz + 0.5);
+
+                // Sisi kiri depan (+Z)
+                svg += `<polygon points="${t4} ${t3} ${b3} ${b4}" fill="${colors.left}" stroke="#1E293B" stroke-width="1.3" stroke-linejoin="round"/>`;
+                // Sisi kanan (+X)
+                svg += `<polygon points="${t3} ${t2} ${b2} ${b3}" fill="${colors.right}" stroke="#1E293B" stroke-width="1.3" stroke-linejoin="round"/>`;
+                // Sisi atas (+Y)
+                svg += `<polygon points="${t1} ${t2} ${t3} ${t4}" fill="${colors.top}" stroke="#1E293B" stroke-width="1.3" stroke-linejoin="round"/>`;
+            });
+
+            svg += `<text x="24" y="${h - 4}" font-size="8.5" font-weight="800" fill="#2563EB">↙ DEPAN</text>`;
+            svg += `<text x="${w - 56}" y="${h - 4}" font-size="8.5" font-weight="800" fill="#9333EA">KANAN ↘</text>`;
+
+            return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="mx-auto">${svg}</svg>`;
+        }
+
+        /* ============================================================================
+           5. NAVIGASI ANTAR-TAHAP PEMBELAJARAN & MODE BERANDA
+           ============================================================================ */
+        function setUserMode(mode) {
+            userMode = mode;
+            const btnSiswa = document.getElementById('mode-btn-siswa');
+            const btnGuru = document.getElementById('mode-btn-guru');
+            const headerBadge = document.getElementById('header-mode-badge');
+
+            if (btnSiswa && btnGuru) {
+                if (mode === 'siswa') {
+                    btnSiswa.className = "px-4 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm transition-all bg-amber-400 text-slate-900 shadow";
+                    btnGuru.className = "px-4 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm transition-all text-white hover:bg-white/10";
+                } else {
+                    btnGuru.className = "px-4 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm transition-all bg-amber-400 text-slate-900 shadow";
+                    btnSiswa.className = "px-4 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm transition-all text-white hover:bg-white/10";
+                }
+            }
+
+            if (headerBadge) {
+                headerBadge.textContent = mode === 'siswa' ? 'Mode Siswa' : 'Mode Guru';
+                headerBadge.className = mode === 'siswa'
+                    ? 'px-2.5 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-extrabold'
+                    : 'px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-800 text-[11px] font-extrabold';
+            }
+        }
+
+        function startFromHome(targetSection) {
+            switchSection(targetSection);
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+
+        function switchSection(sectionName) {
+            currentSection = sectionName;
+
+            const berandaEl = document.getElementById('section-beranda');
+            const headerEl = document.getElementById('main-app-header');
+            const mainEl = document.getElementById('main-app-content');
+
+            if (sectionName === 'beranda') {
+                if (berandaEl) berandaEl.classList.remove('hidden');
+                if (headerEl) headerEl.classList.add('hidden');
+                if (mainEl) mainEl.classList.add('hidden');
+                return;
+            }
+
+            if (berandaEl) berandaEl.classList.add('hidden');
+            if (headerEl) headerEl.classList.remove('hidden');
+            if (mainEl) mainEl.classList.remove('hidden');
+
+            const sections = ['apersepsi', 'materi', 'aktivitas', 'asesmen'];
+            sections.forEach(sec => {
+                const secEl = document.getElementById(`section-${sec}`);
+                const navEl = document.getElementById(`nav-${sec}`);
+                if (secEl) {
+                    secEl.classList.toggle('hidden', sec !== sectionName);
+                }
+                if (navEl) {
+                    const badge = navEl.querySelector('span:first-child');
+                    if (sec === sectionName) {
+                        navEl.className = "nav-pill flex items-center gap-2 px-4 py-3 rounded-2xl font-extrabold text-sm sm:text-base bg-indigo-600 text-white shadow-md transition-all";
+                        if (badge) badge.className = "w-6 h-6 rounded-full bg-white/25 text-xs flex items-center justify-center font-black";
+                    } else {
+                        navEl.className = "nav-pill flex items-center gap-2 px-4 py-3 rounded-2xl font-bold text-sm sm:text-base bg-slate-100 hover:bg-indigo-50 text-slate-700 transition-all";
+                        if (badge) badge.className = "w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs flex items-center justify-center font-black";
+                    }
+                }
+            });
+
+            if (sectionName === 'apersepsi' && apersepsiScene) {
+                requestAnimationFrame(() => apersepsiScene.resize());
+            } else if (sectionName === 'aktivitas' && builderScene) {
+                requestAnimationFrame(() => builderScene.resize());
+            }
+
+            if (mainEl) mainEl.scrollTop = 0;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /* ============================================================================
+           6. LOGIKA BAGIAN 1: APERSEPSI
+           ============================================================================ */
+        function selectApersepsiModel(index) {
+            currentApModelIdx = index;
+            const model = APERSEPSI_MODELS[index];
+
+            document.getElementById('ap-model-title').textContent = model.title;
+            document.getElementById('ap-model-desc').textContent = model.desc;
+
+            [0, 1, 2].forEach(i => {
+                const btn = document.getElementById(`ap-model-btn-${i}`);
+                if (!btn) return;
+                if (i === index) {
+                    btn.className = "btn-3d px-3.5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 bg-indigo-600 text-white border-indigo-700";
+                } else {
+                    btn.className = "btn-3d px-3.5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 bg-slate-100 text-slate-700 border-slate-200 hover:bg-indigo-50";
+                }
+            });
+
+            if (apersepsiScene) {
+                apersepsiScene.buildBoard(model.gridSize);
+                apersepsiScene.setCubes(model.cubes);
+                apersepsiScene.setCameraPreset('3d');
+            }
+
+            const proj = computeProjections(model.cubes, model.gridSize, model.maxHeight);
+            document.getElementById('ap-grid-front').innerHTML = renderProjectionSVG(proj.front, false, 24);
+            document.getElementById('ap-grid-right').innerHTML = renderProjectionSVG(proj.right, false, 24);
+            document.getElementById('ap-grid-top').innerHTML = renderProjectionSVG(proj.top, true, 24);
+
+            highlightApersepsiCard('3d');
+        }
+
+        function setApersepsiView(view) {
+            if (apersepsiScene) {
+                apersepsiScene.setCameraPreset(view);
+            }
+            highlightApersepsiCard(view);
+        }
+
+        function highlightApersepsiCard(view) {
+            const frontCard = document.getElementById('ap-card-front');
+            const rightCard = document.getElementById('ap-card-right');
+            const topCard = document.getElementById('ap-card-top');
+
+            frontCard.classList.remove('ring-4', 'ring-blue-400', 'scale-[1.03]');
+            rightCard.classList.remove('ring-4', 'ring-purple-400', 'scale-[1.03]');
+            topCard.classList.remove('ring-4', 'ring-emerald-400', 'scale-[1.03]');
+
+            if (view === 'front') frontCard.classList.add('ring-4', 'ring-blue-400', 'scale-[1.03]');
+            if (view === 'right') rightCard.classList.add('ring-4', 'ring-purple-400', 'scale-[1.03]');
+            if (view === 'top') topCard.classList.add('ring-4', 'ring-emerald-400', 'scale-[1.03]');
+        }
+
+        /* ============================================================================
+           7. LOGIKA BAGIAN 3: AKTIVITAS UTAMA (10 MISI SUSUN KUBUS)
+           ============================================================================ */
+        function selectMissionGroup(groupNum) {
+            const firstIdx = MISSIONS_DATA.findIndex(m => m.group === groupNum);
+            if (firstIdx !== -1) {
+                selectMission(firstIdx);
+            }
+        }
+
+        function prevMission() {
+            if (currentMissionIndex > 0) {
+                selectMission(currentMissionIndex - 1);
+            }
+        }
+
+        function nextMission() {
+            if (currentMissionIndex < MISSIONS_DATA.length - 1) {
+                selectMission(currentMissionIndex + 1);
+            }
+        }
+
+        function selectMission(index) {
+            currentMissionIndex = index;
+            selectedChoiceIdx = null;
+            const mission = MISSIONS_DATA[index];
+
+            // Perbarui header misi
+            document.getElementById('mission-number-badge').textContent = mission.id;
+            document.getElementById('mission-title').textContent = mission.title;
+            document.getElementById('mission-subtitle').textContent = mission.subtitle;
+            document.getElementById('mission-grid-badge').textContent = `Alas Maks: ${mission.gridSize}×${mission.gridSize} | Tinggi: ${mission.maxHeight}`;
+            document.getElementById('sidebar-mission-num').textContent = `${mission.id} / ${MISSIONS_DATA.length}`;
+
+            // Perbarui status tombol group level
+            [1, 2, 3].forEach((grp, idx) => {
+                const btn = document.getElementById(`lvl-btn-${idx}`);
+                if (!btn) return;
+                if (mission.group === grp) {
+                    btn.className = "flex-1 lg:flex-initial px-4 py-3 rounded-2xl font-extrabold text-sm border-2 bg-indigo-600 text-white border-indigo-700 shadow-sm transition-all";
+                } else {
+                    btn.className = "flex-1 lg:flex-initial px-4 py-3 rounded-2xl font-bold text-sm border-2 bg-slate-100 text-slate-700 border-slate-200 hover:bg-indigo-50 transition-all";
+                }
+            });
+
+            // Render 10 tombol pil nomor misi
+            const pillsContainer = document.getElementById('mission-selector-pills');
+            pillsContainer.innerHTML = MISSIONS_DATA.map((m, idx) => {
+                const isActive = idx === currentMissionIndex;
+                const isDone = completedMissions.has(m.id);
+                let style = "bg-slate-100 text-slate-700 border-slate-200 hover:bg-indigo-50";
+                if (isActive) style = "bg-blue-600 text-white border-blue-700 scale-105 shadow-md";
+                else if (isDone) style = "bg-emerald-100 text-emerald-800 border-emerald-400";
+
+                return `<button onclick="selectMission(${idx})" class="w-10 h-10 rounded-xl font-extrabold text-sm border-2 transition-all ${style}">${isDone && !isActive ? '✓' : m.id}</button>`;
+            }).join('');
+
+            document.getElementById('btn-prev-mission').disabled = currentMissionIndex === 0;
+            document.getElementById('btn-next-mission').disabled = currentMissionIndex === MISSIONS_DATA.length - 1;
+
+            // Render 3 proyeksi target 2D di kolom kiri
+            const proj = computeProjections(mission.targetCubes, mission.gridSize, mission.maxHeight);
+            document.getElementById('target-grid-front').innerHTML = renderProjectionSVG(proj.front, false, 24);
+            document.getElementById('target-grid-right').innerHTML = renderProjectionSVG(proj.right, false, 24);
+            document.getElementById('target-grid-top').innerHTML = renderProjectionSVG(proj.top, true, 24);
+
+            // Sembunyikan kotak umpan balik lama
+            document.getElementById('builder-feedback-box').classList.add('hidden');
+
+            // Atur mode tampilan: 'build' (3D Workspace) vs 'choice' (Analisis Susunan A/B/C)
+            const buildWorkspace = document.getElementById('workspace-build-mode');
+            const choiceWorkspace = document.getElementById('workspace-choice-mode');
+            const builderTools = document.getElementById('builder-tools-panel');
+            const choiceTools = document.getElementById('choice-tools-panel');
+
+            if (mission.type === 'choice') {
+                buildWorkspace.classList.add('hidden');
+                choiceWorkspace.classList.remove('hidden');
+                choiceWorkspace.classList.add('flex');
+                builderTools.classList.add('hidden');
+                choiceTools.classList.remove('hidden');
+
+                document.getElementById('choice-mode-prompt').textContent = mission.prompt;
+                renderChoiceCards(mission);
+            } else {
+                choiceWorkspace.classList.add('hidden');
+                choiceWorkspace.classList.remove('flex');
+                buildWorkspace.classList.remove('hidden');
+                choiceTools.classList.add('hidden');
+                builderTools.classList.remove('hidden');
+
+                builderCubes = (mission.initialCubes || []).map(c => ({ ...c }));
+                if (builderScene) {
+                    builderScene.buildBoard(mission.gridSize);
+                    builderScene.setCubes(builderCubes);
+                    builderScene.setCameraPreset('3d');
+                    requestAnimationFrame(() => builderScene.resize());
+                }
+                updateCubeCountDisplay();
+            }
+        }
+
+        function renderChoiceCards(mission) {
+            const container = document.getElementById('choice-cards-container');
+            container.innerHTML = mission.choices.map((ch, idx) => {
+                const isSelected = selectedChoiceIdx === idx;
+                const borderClass = isSelected
+                    ? "border-indigo-600 bg-indigo-50/70 ring-4 ring-indigo-300 scale-[1.02]"
+                    : "border-slate-200 bg-white hover:border-indigo-300";
+
+                return `
+                    <button onclick="selectChoiceOption(${idx})" class="rounded-3xl p-4 border-2 shadow-sm transition-all flex flex-col items-center justify-between space-y-3 ${borderClass}">
+                        <div class="my-1">${renderIsometricPreviewSVG(ch.cubes, mission.gridSize, 18)}</div>
+                        <span class="px-5 py-2 rounded-2xl font-extrabold text-sm sm:text-base ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800'}">
+                            ${ch.label}
+                        </span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectChoiceOption(idx) {
+            selectedChoiceIdx = idx;
+            const mission = MISSIONS_DATA[currentMissionIndex];
+            renderChoiceCards(mission);
+        }
+
+        function setBuilderTool(tool) {
+            builderTool = tool;
+            const addBtn = document.getElementById('tool-btn-add');
+            const remBtn = document.getElementById('tool-btn-remove');
+
+            if (tool === 'add') {
+                addBtn.className = "btn-3d py-3.5 px-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 border-2 bg-emerald-500 text-white border-emerald-600 shadow-md";
+                remBtn.className = "btn-3d py-3.5 px-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 border-2 bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100";
+            } else {
+                remBtn.className = "btn-3d py-3.5 px-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 border-2 bg-rose-600 text-white border-rose-700 shadow-md";
+                addBtn.className = "btn-3d py-3.5 px-4 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 border-2 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100";
+            }
+        }
+
+        function setCubeColor(hex) {
+            selectedCubeColor = hex;
+            const map = {
+                '#3B82F6': 'color-btn-blue',
+                '#22C55E': 'color-btn-green',
+                '#FACC15': 'color-btn-yellow',
+                '#EF4444': 'color-btn-red'
+            };
+            Object.values(map).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.remove('border-4', 'border-slate-900', 'scale-110');
+                    el.classList.add('border-2', 'border-white');
+                }
+            });
+            const activeEl = document.getElementById(map[hex]);
+            if (activeEl) {
+                activeEl.classList.remove('border-2', 'border-white');
+                activeEl.classList.add('border-4', 'border-slate-900', 'scale-110');
+            }
+        }
+
+        function setBuilderCamera(view) {
+            if (builderScene) builderScene.setCameraPreset(view);
+        }
+
+        function rotateBuilderOrbit(delta) {
+            if (builderScene) builderScene.rotateBy(delta);
+        }
+
+        function resetBuilderBoard() {
+            const mission = MISSIONS_DATA[currentMissionIndex];
+            builderCubes = (mission.initialCubes || []).map(c => ({ ...c }));
+            if (builderScene) {
+                builderScene.setCubes(builderCubes);
+            }
+            updateCubeCountDisplay();
+            document.getElementById('builder-feedback-box').classList.add('hidden');
+        }
+
+        function updateCubeCountDisplay() {
+            document.getElementById('cube-count-display').textContent = builderCubes.length;
+        }
+
+        function hasCubeAt(x, y, z) {
+            return builderCubes.some(c => c.x === x && c.y === y && c.z === z);
+        }
+
+        function handleBuilderInteract(info) {
+            const mission = MISSIONS_DATA[currentMissionIndex];
+            if (!mission || mission.type !== 'build') return;
+
+            if (builderTool === 'remove') {
+                if (info.targetType === 'cube') {
+                    // Hapus kubus paling atas di kolom (x, z) agar tidak melayang, atau kubus yang diketuk jika di puncak
+                    const sameCol = builderCubes.filter(c => c.x === info.x && c.z === info.z);
+                    if (sameCol.length > 0) {
+                        sameCol.sort((a, b) => b.y - a.y);
+                        const topY = sameCol[0].y;
+                        const removeY = (info.y === topY) ? info.y : topY;
+                        builderCubes = builderCubes.filter(c => !(c.x === info.x && c.y === removeY && c.z === info.z));
+                        builderScene.setCubes(builderCubes);
+                        updateCubeCountDisplay();
+                    }
+                }
+                return;
+            }
+
+            // Mode TAMBAH KUBUS
+            let nx = info.x;
+            let ny = 0;
+            let nz = info.z;
+
+            if (info.targetType === 'tile') {
+                const col = builderCubes.filter(c => c.x === nx && c.z === nz);
+                ny = col.length;
+            } else if (info.targetType === 'cube') {
+                nx = info.x + (info.normal ? info.normal.x : 0);
+                ny = info.y + (info.normal ? info.normal.y : 1);
+                nz = info.z + (info.normal ? info.normal.z : 0);
+            }
+
+            // Validasi batas papan dan ketinggian maksimal
+            if (nx < 0 || nx >= mission.gridSize || nz < 0 || nz >= mission.gridSize) return;
+            if (ny < 0 || ny >= mission.maxHeight) {
+                showBuilderFeedback('warning', 'Batas Tinggi Tercapai', `Tinggi tumpukan maksimal pada misi ini adalah ${mission.maxHeight} kubus.`);
+                return;
+            }
+            if (hasCubeAt(nx, ny, nz)) return;
+
+            // Pastikan kubus bertumpu di alas atau di atas kubus lain (tidak melayang)
+            if (ny > 0 && !hasCubeAt(nx, ny - 1, nz)) {
+                const col = builderCubes.filter(c => c.x === nx && c.z === nz);
+                ny = col.length;
+                if (ny >= mission.maxHeight) return;
+            }
+
+            builderCubes.push({ x: nx, y: ny, z: nz, color: selectedCubeColor });
+            builderScene.setCubes(builderCubes);
+            updateCubeCountDisplay();
+        }
+
+        function matricesMatchSilhouette(matA, matB) {
+            for (let r = 0; r < matA.length; r++) {
+                for (let c = 0; c < matA[0].length; c++) {
+                    const filledA = Boolean(matA[r][c]);
+                    const filledB = Boolean(matB[r][c]);
+                    if (filledA !== filledB) return false;
+                }
+            }
+            return true;
+        }
+
+        function showBuilderFeedback(type, title, text) {
+            const box = document.getElementById('builder-feedback-box');
+            const icon = document.getElementById('builder-feedback-icon');
+            const titleEl = document.getElementById('builder-feedback-title');
+            const textEl = document.getElementById('builder-feedback-text');
+
+            box.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-300', 'text-emerald-900', 'bg-amber-50', 'border-amber-300', 'text-amber-900');
+
+            if (type === 'success') {
+                box.classList.add('bg-emerald-50', 'border-emerald-300', 'text-emerald-900');
+                icon.textContent = '🎉';
+            } else {
+                box.classList.add('bg-amber-50', 'border-amber-300', 'text-amber-900');
+                icon.textContent = '💡';
+            }
+
+            titleEl.textContent = title;
+            textEl.textContent = text;
+        }
+
+        function checkUserConstruction() {
+            const mission = MISSIONS_DATA[currentMissionIndex];
+
+            if (mission.type === 'choice') {
+                if (selectedChoiceIdx === null) {
+                    showBuilderFeedback('warning', 'Pilih Salah Satu Susunan', 'Silakan ketuk Susunan A, Susunan B, atau Susunan C terlebih dahulu.');
+                    return;
+                }
+                const chosen = mission.choices[selectedChoiceIdx];
+                if (chosen.isCorrect) {
+                    completedMissions.add(mission.id);
+                    document.getElementById('sidebar-completed-count').textContent = `${completedMissions.size} / ${MISSIONS_DATA.length}`;
+                    selectMission(currentMissionIndex);
+                    selectedChoiceIdx = mission.choices.indexOf(chosen);
+                    renderChoiceCards(mission);
+                    showBuilderFeedback('success', 'Hebat! Analisis Tepat!', `${chosen.label} memiliki tampak depan, samping kanan, dan tampak atas yang sesuai dengan gambar target.`);
+                } else {
+                    showBuilderFeedback('warning', 'Belum Tepat, Coba Amati Lagi!', 'Periksa kembali posisi kubus pada tampak atas dan ketinggiannya dari depan serta samping kanan.');
+                }
+                return;
+            }
+
+            if (builderCubes.length === 0) {
+                showBuilderFeedback('warning', 'Papan Masih Kosong', 'Tambahkan kubus satuan pada papan alas sesuai gambar tampak depan, samping kanan, dan atas.');
+                return;
+            }
+
+            const targetProj = computeProjections(mission.targetCubes, mission.gridSize, mission.maxHeight);
+            const userProj = computeProjections(builderCubes, mission.gridSize, mission.maxHeight);
+
+            const frontOk = matricesMatchSilhouette(userProj.front, targetProj.front);
+            const rightOk = matricesMatchSilhouette(userProj.right, targetProj.right);
+            const topOk = matricesMatchSilhouette(userProj.top, targetProj.top);
+
+            if (frontOk && rightOk && topOk) {
+                completedMissions.add(mission.id);
+                document.getElementById('sidebar-completed-count').textContent = `${completedMissions.size} / ${MISSIONS_DATA.length}`;
+                selectMission(currentMissionIndex);
+                showBuilderFeedback('success', 'Luar Biasa! Susunan Kubus Benar!', 'Susunan kubusmu telah sesuai dengan tampak depan, tampak samping kanan, dan tampak atas!');
+            } else if (!topOk) {
+                showBuilderFeedback('warning', 'Belum Tepat', 'Coba amati kembali posisi petak kubus yang terisi dari arah atas (Tampak Atas).');
+            } else if (!frontOk) {
+                showBuilderFeedback('warning', 'Belum Tepat', 'Periksa kembali tinggi tumpukan kubus pada setiap kolom dari arah depan (Tampak Depan).');
+            } else {
+                showBuilderFeedback('warning', 'Belum Tepat', 'Perhatikan susunan pada bagian depan dan belakang dari arah samping kanan (Tampak Kanan).');
+            }
+        }
+
+        /* ============================================================================
+           8. LOGIKA BAGIAN 4: ASESMEN FORMATIF (10 SOAL PILIHAN GANDA)
+           ============================================================================ */
+        function renderQuizQuestion() {
+            const q = QUIZ_QUESTIONS[currentQuizIdx];
+            document.getElementById('quiz-counter-text').textContent = `${currentQuizIdx + 1} / ${QUIZ_QUESTIONS.length}`;
+            document.getElementById('quiz-topic-tag').textContent = q.topic;
+            document.getElementById('quiz-question-text').textContent = q.question;
+
+            // Indikator langkah 1..10
+            const indicators = document.getElementById('quiz-step-indicators');
+            indicators.innerHTML = QUIZ_QUESTIONS.map((item, idx) => {
+                const answered = userQuizAnswers[idx] !== null;
+                const active = idx === currentQuizIdx;
+                let cls = "bg-slate-100 text-slate-600 border-slate-200";
+                if (active) cls = "bg-indigo-600 text-white border-indigo-700 scale-110 shadow";
+                else if (answered) cls = "bg-emerald-100 text-emerald-800 border-emerald-300";
+                return `<button onclick="jumpToQuiz(${idx})" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl font-extrabold text-xs sm:text-sm border-2 transition-all ${cls}">${idx + 1}</button>`;
+            }).join('');
+
+            // Stimulus gambar proyeksi untuk soal 6..10
+            const stimulusEl = document.getElementById('quiz-stimulus-container');
+            if (q.visualType) {
+                const proj = computeProjections(q.targetCubes, q.gridSize, q.maxHeight);
+                const cards = [];
+                if (q.views.includes('front')) {
+                    cards.push(`
+                        <div class="bg-white rounded-2xl p-3 border-2 border-blue-200 text-center min-w-[130px]">
+                            <div class="text-xs font-extrabold text-blue-700 mb-1.5">TAMPAK DEPAN</div>
+                            ${renderProjectionSVG(proj.front, false, 24)}
+                            <div class="text-[11px] font-bold text-slate-500 mt-1">Kiri ◄─► Kanan</div>
+                        </div>
+                    `);
+                }
+                if (q.views.includes('right')) {
+                    cards.push(`
+                        <div class="bg-white rounded-2xl p-3 border-2 border-purple-200 text-center min-w-[130px]">
+                            <div class="text-xs font-extrabold text-purple-700 mb-1.5">TAMPAK KANAN</div>
+                            ${renderProjectionSVG(proj.right, false, 24)}
+                            <div class="text-[11px] font-bold text-slate-500 mt-1">Depan ◄─► Belakang</div>
+                        </div>
+                    `);
+                }
+                if (q.views.includes('top')) {
+                    cards.push(`
+                        <div class="bg-white rounded-2xl p-3 border-2 border-emerald-200 text-center min-w-[130px]">
+                            <div class="text-xs font-extrabold text-emerald-700 mb-1.5">TAMPAK ATAS</div>
+                            ${renderProjectionSVG(proj.top, true, 24)}
+                            <div class="text-[11px] font-bold text-slate-500 mt-1">Depan di Bawah ▼</div>
+                        </div>
+                    `);
+                }
+                stimulusEl.innerHTML = `<div class="flex flex-wrap items-center justify-center gap-3">${cards.join('')}</div>`;
+                stimulusEl.classList.remove('hidden');
+            } else {
+                stimulusEl.innerHTML = '';
+                stimulusEl.classList.add('hidden');
+            }
+
+            // Opsi jawaban A, B, C, D
+            const optContainer = document.getElementById('quiz-options-container');
+            if (q.visualType) {
+                optContainer.className = "grid grid-cols-2 sm:grid-cols-4 gap-3";
+                optContainer.innerHTML = q.options.map(opt => {
+                    const isSelected = userQuizAnswers[currentQuizIdx] === opt.key;
+                    const cls = isSelected
+                        ? "border-indigo-600 bg-indigo-50 ring-4 ring-indigo-200"
+                        : "border-slate-200 bg-white hover:border-indigo-300";
+                    return `
+                        <button onclick="selectQuizOption('${opt.key}')" class="rounded-2xl p-3 border-2 transition-all flex flex-col items-center justify-between space-y-2 ${cls}">
+                            <div class="w-full flex items-center justify-between">
+                                <span class="w-8 h-8 rounded-xl font-extrabold text-sm flex items-center justify-center ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'}">${opt.key}</span>
+                                <span class="text-xs font-extrabold text-slate-600">${opt.text}</span>
+                            </div>
+                            ${renderIsometricPreviewSVG(opt.cubes, q.gridSize, 16)}
+                        </button>
+                    `;
+                }).join('');
+            } else {
+                optContainer.className = "grid grid-cols-1 gap-3";
+                optContainer.innerHTML = q.options.map(opt => {
+                    const isSelected = userQuizAnswers[currentQuizIdx] === opt.key;
+                    const cls = isSelected
+                        ? "border-indigo-600 bg-indigo-50 ring-2 ring-indigo-300"
+                        : "border-slate-200 bg-white hover:bg-slate-50";
+                    return `
+                        <button onclick="selectQuizOption('${opt.key}')" class="w-full text-left rounded-2xl p-4 border-2 transition-all flex items-center gap-3.5 ${cls}">
+                            <span class="w-10 h-10 shrink-0 rounded-xl font-extrabold text-base flex items-center justify-center ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'}">
+                                ${opt.key}
+                            </span>
+                            <span class="text-base sm:text-lg font-bold text-slate-800">${opt.text}</span>
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('quiz-prev-btn').disabled = currentQuizIdx === 0;
+            const isLast = currentQuizIdx === QUIZ_QUESTIONS.length - 1;
+            document.getElementById('quiz-next-btn').classList.toggle('hidden', isLast);
+            document.getElementById('quiz-submit-btn').classList.toggle('hidden', !isLast);
+            document.getElementById('quiz-warning-msg').classList.add('hidden');
+        }
+
+        function jumpToQuiz(idx) {
+            currentQuizIdx = idx;
+            renderQuizQuestion();
+        }
+
+        function selectQuizOption(key) {
+            userQuizAnswers[currentQuizIdx] = key;
+            renderQuizQuestion();
+        }
+
+        function prevQuizQuestion() {
+            if (currentQuizIdx > 0) {
+                currentQuizIdx--;
+                renderQuizQuestion();
+            }
+        }
+
+        function nextQuizQuestion() {
+            if (currentQuizIdx < QUIZ_QUESTIONS.length - 1) {
+                currentQuizIdx++;
+                renderQuizQuestion();
+            }
+        }
+
+        function submitQuiz() {
+            if (userQuizAnswers.some(ans => ans === null)) {
+                document.getElementById('quiz-warning-msg').classList.remove('hidden');
+                return;
+            }
+
+            isQuizSubmitted = true;
+            let correctCount = 0;
+            QUIZ_QUESTIONS.forEach((q, idx) => {
+                if (userQuizAnswers[idx] === q.correct) correctCount++;
+            });
+
+            const wrongCount = QUIZ_QUESTIONS.length - correctCount;
+            const score = correctCount * 10;
+
+            document.getElementById('res-correct-count').textContent = correctCount;
+            document.getElementById('res-wrong-count').textContent = wrongCount;
+            document.getElementById('res-final-score').textContent = score;
+
+            const banner = document.getElementById('res-feedback-banner');
+            const emoji = document.getElementById('res-feedback-emoji');
+            const msg = document.getElementById('res-feedback-message');
+
+            banner.className = "rounded-2xl p-5 border-2 text-center space-y-1";
+            if (score >= 80) {
+                banner.classList.add('bg-emerald-50', 'border-emerald-300', 'text-emerald-900');
+                emoji.textContent = '🏆';
+                msg.textContent = "Hebat! Kamu sudah memahami cara membaca tampak depan, samping, dan atas.";
+            } else if (score >= 60) {
+                banner.classList.add('bg-amber-50', 'border-amber-300', 'text-amber-900');
+                emoji.textContent = '👍';
+                msg.textContent = "Bagus! Kamu sudah memahami sebagian materi. Pelajari kembali bagian yang masih keliru.";
+            } else {
+                banner.classList.add('bg-rose-50', 'border-rose-300', 'text-rose-900');
+                emoji.textContent = '💪';
+                msg.textContent = "Tetap semangat! Yuk, amati kembali susunan kubus dari tiga arah agar semakin paham.";
+            }
+
+            // Siapkan pembahasan setiap soal
+            const reviewContainer = document.getElementById('quiz-review-items');
+            reviewContainer.innerHTML = QUIZ_QUESTIONS.map((q, idx) => {
+                const userAns = userQuizAnswers[idx];
+                const isRight = userAns === q.correct;
+                const userOpt = q.options.find(o => o.key === userAns);
+                const rightOpt = q.options.find(o => o.key === q.correct);
+                return `
+                    <div class="rounded-2xl p-4 border-2 ${isRight ? 'bg-emerald-50/60 border-emerald-200' : 'bg-rose-50/60 border-rose-200'} space-y-1.5">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-extrabold text-sm text-slate-800">${q.topic}</span>
+                            <span class="px-2.5 py-0.5 rounded-lg text-xs font-extrabold ${isRight ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}">
+                                ${isRight ? '✓ Benar (+10)' : '✕ Salah (0)'}
+                            </span>
+                        </div>
+                        <p class="text-sm font-bold text-slate-700">${q.question}</p>
+                        <div class="text-xs sm:text-sm font-semibold text-slate-600">
+                            Jawabanmu: <strong>${userAns}. ${userOpt ? userOpt.text : '-'}</strong> • Kunci: <strong class="text-emerald-700">${q.correct}. ${rightOpt ? rightOpt.text : '-'}</strong>
+                        </div>
+                        <p class="text-xs sm:text-sm font-bold text-indigo-800 bg-white/80 p-2.5 rounded-xl border border-indigo-100">
+                            💡 Pembahasan: ${q.explanation}
+                        </p>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('quiz-question-card').classList.add('hidden');
+            document.getElementById('quiz-result-card').classList.remove('hidden');
+            document.getElementById('quiz-review-list').classList.add('hidden');
+        }
+
+        function toggleQuizReview() {
+            const list = document.getElementById('quiz-review-list');
+            list.classList.toggle('hidden');
+        }
+
+        function resetQuiz() {
+            currentQuizIdx = 0;
+            userQuizAnswers = new Array(QUIZ_QUESTIONS.length).fill(null);
+            isQuizSubmitted = false;
+            document.getElementById('quiz-result-card').classList.add('hidden');
+            document.getElementById('quiz-question-card').classList.remove('hidden');
+            renderQuizQuestion();
+        }
+
+        /* ============================================================================
+           9. INISIALISASI SAAT HALAMAN SELESAI DIMUAT
+           ============================================================================ */
+        window.onload = function () {
+            apersepsiScene = new CubeSceneManager('apersepsi-3d-container', { interactive: false });
+            selectApersepsiModel(0);
+
+            builderScene = new CubeSceneManager('builder-3d-container', {
+                interactive: true,
+                onCellInteract: handleBuilderInteract
+            });
+            setBuilderTool('add');
+            selectMission(0);
+
+            renderQuizQuestion();
+            setUserMode('guru');
+            switchSection('beranda');
+
+            window.addEventListener('resize', () => {
+                if (apersepsiScene) apersepsiScene.resize();
+                if (builderScene) builderScene.resize();
+            });
+
+            animateLoop();
+        };
+    </script>
+</body>
+</html>
